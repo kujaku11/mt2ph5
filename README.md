@@ -11,7 +11,4 @@ Note: This is a work in progress.  Feel free to comment or send me a message at 
 ## Modules
 
 ## Flowcharts of data format
-![Flowchart PH5](ph5_flowchart.jpg)
-
-
 ![Mapping MT into PH5](ph5_flowchart_mt.jpg)
