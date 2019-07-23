@@ -117,11 +117,14 @@ def add_survey_metadata(ph5_obj, survey_dict):
         except TypeError:
             col_len = 32
   
-        columns.add_column(ph5_obj.ph5_g_experiment.Experiment_t,
-                           key,
-                           [value],
-                           get_column_type(key),
-                           type_len=col_len)
+        try:
+            columns.add_column(ph5_obj.ph5_g_experiment.Experiment_t,
+                               key,
+                               [value],
+                               get_column_type(key),
+                               type_len=col_len)
+        except AssertionError as error:
+            print('Could not add {0} because {1}'.format(key, error))
             
     print("updated Experiment_t")
 
