@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import glob
+import json
 from pathlib import Path
 import numpy as np
 
@@ -47,6 +48,21 @@ def initialize_ph5_file(ph5_fn):
     print("Made PH5 File {0}".format(ph5_path))
     
     return ph5_obj
+
+def get_column_type(keyword):
+    """
+    get the column type from the key word
+    """
+    if keyword[-1] in ['s']:
+        col_type = 'string'
+    elif keyword[-1] in ['l', 'i']:
+        col_type = 'int'
+    elif keyword[-1] in ['d']:
+        col_type = 'float'
+        
+    else:
+        raise ValueError('Cannot determine type of {0} keyword')
+    return col_type
 
 ### add survey metadata
 def add_survey_metadata(ph5_obj, survey_dict):
@@ -91,11 +107,24 @@ def add_survey_metadata(ph5_obj, survey_dict):
     summary_paragraph_s                   summary of survey (1024 char.)  string
     ===================================== =============================== ======
     """
-    survey_table = ph5_obj.ph5_g_experiment.Experiment_t
     
-    columns.append(survey_table, survey_dict)    
+    keys_not_added = columns.append(ph5_obj.ph5_g_experiment.Experiment_t,
+                                    survey_dict)
+
+    for key, value in keys_not_added.items():
+        try:
+            col_len = min([len(value), 32])
+        except TypeError:
+            col_len = 32
+  
+        columns.add_column(ph5_obj.ph5_g_experiment.Experiment_t,
+                           key,
+                           [value],
+                           get_column_type(key),
+                           type_len=col_len)
             
     print("updated Experiment_t")
+
     
 def add_column_to_experiment_t(ph5_obj, new_col_name, new_col_values, 
                                new_col_type, type_len=32):
@@ -140,15 +169,23 @@ def add_station(ph5_obj, station, station_dict):
 # =============================================================================
 # Tests    
 # =============================================================================
+ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5\ph5\test_data\test.ph5"
+survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
 
-ph5_test_obj = initialize_ph5_file(r"c:\Users\jpeacock\Documents\GitHub\PH5\ph5\test_data\test.ph5")
+if os.path.exists(ph5_fn):
+    os.remove(ph5_fn)
+    
+with open(survey_json, 'r') as fid:
+    survey_dict = json.load(fid)
 
+ph5_test_obj = initialize_ph5_file(ph5_fn)
+
+### add Survey metadata to file
 add_survey_metadata(ph5_test_obj, 
-                    {'experiment_id_s':'01234', 
-                     'MT station':'alpha',
-                     'north_west_corner/X/value_d':40.0})
+                    survey_dict)
 
-add_column_to_experiment_t(ph5_test_obj, 
-                           'declination_d',
-                           [10.5], 
-                           'float')
+### Add a column to metadata table 
+#add_column_to_experiment_t(ph5_test_obj, 
+#                           'declination_d',
+#                           [10.5], 
+#                           'float')
