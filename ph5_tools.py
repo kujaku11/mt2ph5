@@ -164,32 +164,54 @@ def add_station(ph5_obj, station, station_dict):
     
     :returns:
     """
-    
     ### make new array in sorts table
-    new_array_name = 'Array_t_xxx'
-    ph5_obj.ph5_g_sorts.newArraySort(new_array_name)
-    array_ref = columns.TABLES['/Experiment_g/Sorts_g/{0}'.format(new_array_name)]
+    ### get next available array name first 
+    array_name = ph5_obj.ph5_g_sorts.nextName()
+   
+    ### make a new array table from given name
+    ph5_obj.ph5_g_sorts.newArraySort(array_name)
+    array_ref = columns.TABLES['/Experiment_g/Sorts_g/{0}'.format(array_name)]
     columns.populate(array_ref, station_dict)
     
-
+    
+    return array_name
+    
+def load_json(json_fn):
+    """
+    read in ajson file 
+    
+    :param json_fn: full path to json file to read
+    :type json_fn: string
+    
+    :returns: dictionary of metadata
+    """
+    with open(json_fn, 'r') as fid:
+        return_dict = json.load(fid)
+        
+    return return_dict
     
 # =============================================================================
 # Tests    
 # =============================================================================
 ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5_py3\ph5\test_data\test.ph5"
 survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
+station_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\station_metadata.json"
 
 if os.path.exists(ph5_fn):
     os.remove(ph5_fn)
-    
-with open(survey_json, 'r') as fid:
-    survey_dict = json.load(fid)
 
 ph5_test_obj = initialize_ph5_file(ph5_fn)
 
 ### add Survey metadata to file
+survey_dict = load_json(survey_json)
 add_survey_metadata(ph5_test_obj, 
                     survey_dict)
+
+### add station
+station_dict = load_json(station_json)
+new_array = add_station(ph5_test_obj, 
+                        'MT01',
+                        station_dict)
 
 ### Add a column to metadata table 
 #add_column_to_experiment_t(ph5_test_obj, 
