@@ -165,14 +165,18 @@ def add_station(ph5_obj, station, station_dict):
     :returns:
     """
     
-    pass
+    ### make new array in sorts table
+    new_array_name = 'Array_t_xxx'
+    ph5_obj.ph5_g_sorts.newArraySort(new_array_name)
+    array_ref = columns.TABLES['/Experiment_g/Sorts_g/{0}'.format(new_array_name)]
+    columns.populate(array_ref, station_dict)
     
 
     
 # =============================================================================
 # Tests    
 # =============================================================================
-ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5\ph5\test_data\test.ph5"
+ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5_py3\ph5\test_data\test.ph5"
 survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
 
 if os.path.exists(ph5_fn):
