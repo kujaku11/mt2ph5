@@ -209,8 +209,6 @@ def add_station_to_sorts(ph5_obj, station, station_dict):
     receiver_table_n_i           receiver table number           int
     response_table_n_i           response table number           int
     ============================ =============================== ==============
-
-    
     """
     ### make new array in sorts table
     ### get next available array name first 
@@ -223,7 +221,10 @@ def add_station_to_sorts(ph5_obj, station, station_dict):
     
     return array_name
 
-def add_station_to_receivers(ph5_obj, station, station_dict)
+def add_station_to_receivers(ph5_obj, station, station_dict):
+    """
+    Add a station to receivers group
+    """
     
 def load_json(json_fn):
     """
