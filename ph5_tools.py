@@ -148,7 +148,7 @@ def add_column_to_experiment_t(ph5_obj, new_col_name, new_col_values,
             
  
 ### Add a station 
-def add_station(ph5_obj, station, station_dict):
+def add_station_to_sorts(ph5_obj, station, station_dict):
     """
     add a station to existing ph5 file
     
@@ -162,19 +162,68 @@ def add_station(ph5_obj, station, station_dict):
     :param station_dict: dictionary containing important metadata
     :type station_dict: dictionary
     
-    :returns:
+    :returns: new array name
+    
+    station_dict should have
+    
+    ============================ =============================== ==============
+    Key                          Description                     Type 
+    ============================ =============================== ==============
+    id_s                         station id number               string
+    location/X/value_d           northing value                  float 
+    location/X/units_s           northing units                  string
+    location/Y/value_d           easting value                   float
+    location/Y/units_s           easting units                   string
+    location/Z/value_d           elevation value                 float 
+    location/Z/units_s           elevation units                 string
+    location/coordinate_system_s location coordinate system      string  
+                                 (ex. WGS84) 
+    location/projection_s        coordinate projection           string
+    location/ellipsoid_s         coordinate ellipsoid            string 
+    location/description_s       description of station site     string
+    deploy_time/ascii_s          time of deployment isoformat    string 
+    deploy_time/epoch_l          time of deployment epoch sec    int
+    deploy_time/micro_seconds_i  time of deployment micro sec    int  
+    deploy_time/type_s           Both, String, Epoch             string
+    pickup_time/ascii_s          pick up time isoformat          string
+    pickup_time/epoch_l          pick up time epoch sec          int
+    pickup_time/micro_seconds_i  pick up time micro sec          int
+    pickup_time/type_s           Both, String, Epoch             string
+    das/serial_number_s          data logger serial number       string
+    das/model_s                  data logger model               string
+    das/manufacturer_s           data logger manufacturer        string
+    das/notes_s                  data logger notes               string  
+    sensor/serial_number_s       sensor serial number            string
+    sensor/model_s               sensor model                    string
+    sensor/manufacturer_s        sensor manufacturer             string
+    sensor/notes_s               sensor notes                    string  
+    description_s                description of station          string
+    seed_band_code_s             seed something                  string
+    sample_rate_i                sample rate (samples/second)    string                      
+    sample_rate_multiplier_i     sample rate multiplier          string
+    seed_instrument_code_s       seed something                  string
+    seed_orientation_code_s      seed something                  string 
+    seed_location_code_s         seed something                  string
+    seed_station_name_s          seed something                  string
+    channel_number_i             channel number                  int 
+    receiver_table_n_i           receiver table number           int
+    response_table_n_i           response table number           int
+    ============================ =============================== ==============
+
+    
     """
     ### make new array in sorts table
     ### get next available array name first 
     array_name = ph5_obj.ph5_g_sorts.nextName()
    
-    ### make a new array table from given name
+    ### make a new sorts array table from given name 
     ph5_obj.ph5_g_sorts.newArraySort(array_name)
     array_ref = columns.TABLES['/Experiment_g/Sorts_g/{0}'.format(array_name)]
     columns.populate(array_ref, station_dict)
     
-    
     return array_name
+
+def add_station_to_receivers(ph5_obj, station, station_dict)
     
 def load_json(json_fn):
     """
@@ -209,9 +258,9 @@ add_survey_metadata(ph5_test_obj,
 
 ### add station
 station_dict = load_json(station_json)
-new_array = add_station(ph5_test_obj, 
-                        'MT01',
-                        station_dict)
+new_array = add_station_to_sorts(ph5_test_obj, 
+                                 'MT01',
+                                 station_dict)
 
 ### Add a column to metadata table 
 #add_column_to_experiment_t(ph5_test_obj, 
