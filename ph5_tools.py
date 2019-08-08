@@ -250,17 +250,24 @@ def open_mini(mini_num, ph5_path):
 
 def add_station(ph5_obj, station_name):
     """
-    add station to receivers_g/das_g_station_name
+    add station to receivers_g/Das_g_station_name
     
+    :param station_name: station name
+    :type station_name: string
+    
+    :returns:das_group, das_table, self.ph5_t_receiver, self.ph5_t_time
     """
     
     return ph5_obj.ph5_g_receivers.newdas(station_name)
 
-def add_channel(ph5_obj, channel_dict, channel_array):
+def add_channel(das_g_name, channel_dict, channel_array):
     """
     add channel to station
     """
+    
     pass
+    
+    
 
 def load_json(json_fn):
     """
