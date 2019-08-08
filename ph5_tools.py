@@ -221,11 +221,47 @@ def add_station_to_sorts(ph5_obj, station, station_dict):
     
     return array_name
 
-def add_station_to_receivers(ph5_obj, station, station_dict):
+def add_reciever_to_table(ph5_obj, receiver_dict):
     """
-    Add a station to receivers group
+    Add a receiver to the receivers table
+    """
+    ### add 
+    ph5_obj.ph5_g_receivers.populateReceiver_t(receiver_dict)
+    n_row = ph5_obj.ph5_g_receivers.ph5_t_receiver.nrows
+    
+    return n_row
+    
+def open_mini(mini_num, ph5_path):
+    """
+    Open PH5 file, miniPH5_xxxxx.ph5
+    :type: str
+    :param mini_num: name of mini file to open
+    :return class: ph5.core.experiment, str: name
+    """
+
+    mini_num = '{0:05}'.format(mini_num)
+    filename = "miniPH5_{0}.ph5".format(mini_num)
+    mini_ph5_obj = experiment.ExperimentGroup(nickname=filename,
+                                       currentpath=ph5_path)
+    mini_ph5_obj.ph5open(True)
+    mini_ph5_obj.initgroup()
+    
+    return mini_ph5_obj, filename
+
+def add_station(ph5_obj, station_name):
+    """
+    add station to receivers_g/das_g_station_name
+    
     """
     
+    return ph5_obj.ph5_g_receivers.newdas(station_name)
+
+def add_channel(ph5_obj, channel_dict, channel_array):
+    """
+    add channel to station
+    """
+    pass
+
 def load_json(json_fn):
     """
     read in ajson file 
@@ -246,6 +282,7 @@ def load_json(json_fn):
 ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5_py3\ph5\test_data\test.ph5"
 survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
 station_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\station_metadata.json"
+receiver_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\receiver_metadata.json"
 
 if os.path.exists(ph5_fn):
     os.remove(ph5_fn)
@@ -262,6 +299,10 @@ station_dict = load_json(station_json)
 new_array = add_station_to_sorts(ph5_test_obj, 
                                  'MT01',
                                  station_dict)
+
+### add receiver
+receiver_dict = load_json(receiver_json)
+n_receiver = add_reciever_to_table(ph5_test_obj, receiver_dict)
 
 ### Add a column to metadata table 
 #add_column_to_experiment_t(ph5_test_obj, 
