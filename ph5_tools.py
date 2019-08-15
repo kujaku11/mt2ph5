@@ -15,6 +15,7 @@ import glob
 import json
 from pathlib import Path
 import numpy as np
+import dateutil
 
 from ph5.core import experiment
 from ph5.core import columns
@@ -22,9 +23,22 @@ from ph5.core import columns
 # =============================================================================
 # Begin tools
 # =============================================================================
+def read_date_time(time_string):
+    """
+    read a time string and convert it to the proper formats
+    
+    :param str time_string: time string date-time
+    
+    :returns: iso-format, epoch, microseconds
+    """
+    
+    dt_obj = dateutil.parser.parse(time_string)
+    
+    return dt_obj.isoformat(), int(dt_obj.timestamp()), dt_obj.microsecond
+
 
 ### Initialize a PH5 file
-def initialize_ph5_file(ph5_fn):
+def open_ph5_file(ph5_fn):
     """Initialize a PH5 file given a file name.  This will build the 
     appropriate groups needed in a PH5 file.
     
@@ -48,6 +62,7 @@ def initialize_ph5_file(ph5_fn):
     print("Made PH5 File {0}".format(ph5_path))
     
     return ph5_obj
+
 
 def get_column_type(keyword):
     """
@@ -148,7 +163,7 @@ def add_column_to_experiment_t(ph5_obj, new_col_name, new_col_values,
             
  
 ### Add a station 
-def add_station_to_sorts(ph5_obj, station, station_dict):
+def add_array_to_sorts(ph5_obj, array_name, array_dict):
     """
     add a station to existing ph5 file
     
@@ -211,13 +226,10 @@ def add_station_to_sorts(ph5_obj, station, station_dict):
     ============================ =============================== ==============
     """
     ### make new array in sorts table
-    ### get next available array name first 
-    array_name = ph5_obj.ph5_g_sorts.nextName()
-   
-    ### make a new sorts array table from given name 
-    ph5_obj.ph5_g_sorts.newArraySort(array_name)
-    array_ref = columns.TABLES['/Experiment_g/Sorts_g/{0}'.format(array_name)]
-    columns.populate(array_ref, station_dict)
+    ### make a new sorts array table from given name
+    if not array_name in ph5_obj.ph5_g_sorts.namesArray_t():
+        ph5_obj.ph5_g_sorts.newArraySort(array_name)
+    ph5_obj.ph5_g_sorts.populateArray_t(array_dict, name=array_name)
     
     return array_name
 
@@ -242,7 +254,7 @@ def open_mini(mini_num, ph5_path):
     mini_num = '{0:05}'.format(mini_num)
     filename = "miniPH5_{0}.ph5".format(mini_num)
     mini_ph5_obj = experiment.ExperimentGroup(nickname=filename,
-                                       currentpath=ph5_path)
+                                              currentpath=ph5_path)
     mini_ph5_obj.ph5open(True)
     mini_ph5_obj.initgroup()
     
@@ -250,13 +262,24 @@ def open_mini(mini_num, ph5_path):
 
 def add_station(ph5_obj, station_name):
     """
-    add station to receivers_g/Das_g_station_name
+    add station to receivers_g
+    
+    1. Make new mini_ph5 file for the station
+    2. Load DAS metadata into das table
+    3. Add channel data as new array, add to array table
+    4. Update index table
+    5. Update external references
     
     :param station_name: station name
     :type station_name: string
     
     :returns:das_group, das_table, self.ph5_t_receiver, self.ph5_t_time
     """
+    
+    das_group, das_table, receiver_table, time_table = ph5_obj.ph5_g_receivers.newdas(station_name)
+    
+    
+    
     
     return ph5_obj.ph5_g_receivers.newdas(station_name)
 
@@ -266,8 +289,57 @@ def add_channel(das_g_name, channel_dict, channel_array):
     """
     
     pass
+ 
+def get_current_mini(size_of_data, das_index_t, das_name, first_mini=1):
+    """
+    Return opened file handle for data only PH5 file that will be
+    less than MAX_PH5_BYTES after raw data is added to it.
+    """
+    MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
+    miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
     
-    
+    def sstripp(s):
+        s = s.replace('.ph5', '')
+        s = s.replace('./', '')
+        return s
+
+    def smallest():
+        '''   Return the name of the smallest miniPH5_xxxxx.ph5   '''
+        minifiles = filter(miniPH5RE.match, os.listdir('.'))
+
+        tiny = minifiles[0]
+        for f in minifiles:
+            if os.path.getsize(f) < os.path.getsize(tiny):
+                tiny = f
+
+        return tiny
+
+    newest_mini = ''
+    # Get the most recent data only PH5 file or match DAS serialnumber
+    n = 0
+    for index_t in das_index_t.rows:
+        # This DAS already exists in a ph5 file
+        if index_t['serial_number_s'] == das_name:
+            newest_mini = sstripp(index_t['external_file_name_s'])
+            return open_ph5_file(newest_mini)
+        # miniPH5_xxxxx.ph5 with largest xxxxx
+        mh = miniPH5RE.match(index_t['external_file_name_s'])
+        if n < int(mh.groups()[0]):
+            newestfile = sstripp(index_t['external_file_name_s'])
+            n = int(mh.groups()[0])
+
+    if not newest_mini:
+        # This is the first file added
+        mini_fn = 'miniPH5_{0:05d}'.format(first_mini)
+        return open_ph5_file(mini_fn)
+    else:
+        mini_fn = newestfile + '.ph5'
+
+    size_of_exrec = os.path.getsize(mini_fn)
+    if (size_of_data + size_of_exrec) > MAX_PH5_BYTES:
+        newestfile = "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
+
+    return open_ph5_file(newest_mini)    
 
 def load_json(json_fn):
     """
@@ -294,7 +366,7 @@ receiver_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\receiver_metadata.js
 if os.path.exists(ph5_fn):
     os.remove(ph5_fn)
 
-ph5_test_obj = initialize_ph5_file(ph5_fn)
+ph5_test_obj = open_ph5_file(ph5_fn)
 
 ### add Survey metadata to file
 survey_dict = load_json(survey_json)
@@ -302,10 +374,10 @@ add_survey_metadata(ph5_test_obj,
                     survey_dict)
 
 ### add station
-station_dict = load_json(station_json)
-new_array = add_station_to_sorts(ph5_test_obj, 
-                                 'MT01',
-                                 station_dict)
+array_dict = load_json(station_json)
+new_array = add_array_to_sorts(ph5_test_obj, 
+                               ph5_test_obj.ph5_g_sorts.nextName(),
+                               array_dict)
 
 ### add receiver
 receiver_dict = load_json(receiver_json)
