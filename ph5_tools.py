@@ -165,7 +165,7 @@ def add_column_to_experiment_t(ph5_obj, new_col_name, new_col_values,
 ### Add a station 
 def add_array_to_sorts(ph5_obj, array_name, array_dict):
     """
-    add a station to existing ph5 file
+    add station metadata to main ph5 file
     
         * will add an entry to receivers_t
         * will add entry to Sorts_t
@@ -260,7 +260,7 @@ def open_mini(mini_num, ph5_path):
     
     return mini_ph5_obj, filename
 
-def add_station(ph5_obj, station_name):
+def add_station_group(ph5_obj, station_name):
     """
     add station to receivers_g
     
@@ -276,70 +276,148 @@ def add_station(ph5_obj, station_name):
     :returns:das_group, das_table, self.ph5_t_receiver, self.ph5_t_time
     """
     
-    das_group, das_table, receiver_table, time_table = ph5_obj.ph5_g_receivers.newdas(station_name)
+    new_das_group = ph5_obj.ph5_g_receivers.newdas(station_name)
+    das_group_name = new_das_group[0]
     
+    mini_num = get_current_mini_num(ph5_obj, station_name)
+    mini_ph5_obj, filename = open_mini(mini_num, ph5_obj.currentpath)
     
+    return das_group_name, mini_ph5_obj
     
-    
-    return ph5_obj.ph5_g_receivers.newdas(station_name)
-
 def add_channel(das_g_name, channel_dict, channel_array):
     """
     add channel to station
+    
+    channel dict
+    
+    ============================ =============================== ==============
+    Key                          Description                     Type 
+    ============================ =============================== ==============
+    time/ascii_s                 start time of the channel       string
+    time/epoch_l                 start time of channel           int
+    time/micro_seconds           start time micro seconds        int
+    time/type_s                  [ both | string | epoch]        string 
+    sample_rate_i                sample rate                     int
+    sample_rate_multiplier_i     sample rate multiplier          int
+    channel_number_i             channel number                  int
+    raw_file_name_s              name of file data came from     string 
+    sample_count_i               number of samples in array      int
+    receiver_table_n_i           number of receiver info         int
+    response_table_n_i           number of response info         int
+    array_name_data_a            name of data array              string
+    ============================ =============================== ==============
+
+    .. note:: should find receiver, response number automatically, user should 
+              not have to input those.
+              
     """
+    
     
     pass
+
+def get_das_station_map(ph5_obj):
+    """
+    Checks if array tables exist
+    returns None
+    otherwise returns a list of dictionaries
+    containing das serial numbers and stations
+    :return: list
+    """
+    array_names = ph5_obj.ph5_g_sorts.namesArray_t()
+    if not array_names:
+        return None
+    station_list = []
+    # use tables where to search array tables and find matches
+    for _array in array_names:
+        tbl = ph5_obj.ph5.get_node('/Experiment_g/Sorts_g/{0}'.format(
+            _array))
+        data = tbl.read()
+        for row in data:
+            station_list.append({'serial': row[4][0], 'station': row[13]})
+    das_station_map = []
+    for station in station_list:
+        if station not in das_station_map:
+            das_station_map.append(station)
+    tbl = None
+
+    return das_station_map
  
-def get_current_mini(size_of_data, das_index_t, das_name, first_mini=1):
+def get_current_mini_num(ph5_obj, station, first_mini=1,
+                         mini_size_max = 26843545600):
     """
-    Return opened file handle for data only PH5 file that will be
-    less than MAX_PH5_BYTES after raw data is added to it.
-    """
-    MAX_PH5_BYTES = 1073741824 * 1.  # 1 GB (1024 X 1024 X 1024 X 2)
-    miniPH5RE = re.compile(r".*miniPH5_(\d\d\d\d\d)\.ph5")
-    
-    def sstripp(s):
-        s = s.replace('.ph5', '')
-        s = s.replace('./', '')
-        return s
-
-    def smallest():
-        '''   Return the name of the smallest miniPH5_xxxxx.ph5   '''
-        minifiles = filter(miniPH5RE.match, os.listdir('.'))
-
-        tiny = minifiles[0]
-        for f in minifiles:
-            if os.path.getsize(f) < os.path.getsize(tiny):
-                tiny = f
-
-        return tiny
-
-    newest_mini = ''
-    # Get the most recent data only PH5 file or match DAS serialnumber
-    n = 0
-    for index_t in das_index_t.rows:
-        # This DAS already exists in a ph5 file
-        if index_t['serial_number_s'] == das_name:
-            newest_mini = sstripp(index_t['external_file_name_s'])
-            return open_ph5_file(newest_mini)
-        # miniPH5_xxxxx.ph5 with largest xxxxx
-        mh = miniPH5RE.match(index_t['external_file_name_s'])
-        if n < int(mh.groups()[0]):
-            newestfile = sstripp(index_t['external_file_name_s'])
-            n = int(mh.groups()[0])
-
-    if not newest_mini:
-        # This is the first file added
-        mini_fn = 'miniPH5_{0:05d}'.format(first_mini)
-        return open_ph5_file(mini_fn)
+    get the current mini number
+    """    
+    mini_list = get_mini_list(ph5_obj.currentpath)
+    if not mini_list:
+        current_mini = first_mini
     else:
-        mini_fn = newestfile + '.ph5'
+        current_mini = None
+        mini_map = get_mini_map(mini_list)
+        das_station_map = get_das_station_map(ph5_obj) 
+        for mini in mini_map:
+            for entry in das_station_map:
+                if (entry['serial'] in mini[1] and
+                        entry['station'] == station):
+                    current_mini = mini[0]
+            if not current_mini:
+                largest = 0
+                for station in mini_map:
+                    if station[0] >= largest:
+                        largest = station[0]
+                if (get_size_mini(largest) < mini_size_max):
+                    current_mini = largest
+                else:
+                    current_mini = largest + 1
+    return current_mini
 
-    size_of_exrec = os.path.getsize(mini_fn)
-    if (size_of_data + size_of_exrec) > MAX_PH5_BYTES:
-        newestfile = "miniPH5_{0:05d}".format(int(newestfile[8:13]) + 1)
+def get_size_mini(mini_num):
+    """
+    :param mini_num: str
+    :return: size of mini file in bytes
+    """
+    mini_num = str(mini_num).zfill(5)
+    mini_path = "miniPH5_{0}.ph5".format(mini_num)
+    return os.path.getsize(mini_path)
 
-    return open_ph5_file(newest_mini)    
+def get_mini_list(ph5_path):
+    """
+    takes a directory and returns a list of all mini files
+    in the current directory
+
+    :type str
+    :param dir
+    :return: list of mini files
+    """
+    miniPH5RE = re.compile(r".*miniPH5_(\d+)\.ph5")
+    mini_list = []
+    for entry in os.listdir(ph5_path):
+        # Create full path
+        mini_path = os.path.join(ph5_path, entry)
+        if miniPH5RE.match(entry):
+            mini_list.append(mini_path)
+    return mini_list
+
+def get_mini_map(mini_list):
+    """
+    :type list
+    :param existing_minis: A list of mini_files with path
+    :return:  list of tuples containing
+    what mini file contains what serial #s
+    """
+    mini_map = []
+    for mini_fn in mini_list:
+        mini_num = int(mini_fn.split('.')[-2].split('_')[-1])
+        exrec = experiment.ExperimentGroup(nickname=mini_fn)
+        exrec.ph5open(True)
+        exrec.initgroup()
+        all_das = exrec.ph5_g_receivers.alldas_g()
+        das_list = []
+        for g in all_das:
+            name = g.split('_')[-1]
+            das_list.append(name)
+        mini_map.append((mini_num, das_list))
+        exrec.ph5close()
+    return mini_map   
 
 def load_json(json_fn):
     """

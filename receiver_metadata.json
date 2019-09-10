@@ -1,0 +1,15 @@
+{"orientation/description_s":"respect to geomagnetic north",
+ "orientation/channel_number_i":1,
+ "orientation/azimuth/value_f":87,
+ "orientation/azimuth/units_s":"degrees",
+ "orientation/dip/value_f":0,
+ "orientation/dip/units_s":"degrees",
+ "location/x/value_f":100,
+ "location/x/units_s":"meters",
+ "location/y/value_f":0,
+ "location/y/units_s":"meters",
+ "location/z/value_f":0,
+ "location/z/units_s":"meters",
+ "location/length/value_f":100,
+ "location/length/units_s":"meters"
+}
