@@ -1,7 +1,7 @@
-{"array_name_SOH_a": "None",
- "array_name_data_a": "None",
- "array_name_event_a": "None",
- "array_name_log_a": "None",
+{"array_name_SOH_a":"None",
+ "array_name_data_a":"None",
+ "array_name_event_a":"None",
+ "array_name_log_a":"None",
  "channel_number_i":1,
  "event_number_i":0,
  "raw_file_name_s":"mt01.asc",
@@ -15,5 +15,5 @@
  "time/ascii_s":"2019-01-01T12:00:00",
  "time/epoch_l":123456,
  "time/micro_seconds_i":0,
- "time/type_s":"Both",
+ "time/type_s":"Both"
  }

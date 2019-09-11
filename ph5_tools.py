@@ -140,8 +140,6 @@ def add_survey_metadata(ph5_obj, survey_dict):
                                type_len=col_len)
         except AssertionError as error:
             print('Could not add {0} because {1}'.format(key, error))
-            
-    print("updated Experiment_t")
 
     
 def add_column_to_experiment_t(ph5_obj, new_col_name, new_col_values, 
@@ -165,10 +163,16 @@ def add_column_to_experiment_t(ph5_obj, new_col_name, new_col_values,
 ### Add a station 
 def add_array_to_sorts(ph5_obj, array_name, array_dict):
     """
-    add station metadata to main ph5 file
-    
-        * will add an entry to receivers_t
+    add array metadata to main ph5 file
         * will add entry to Sorts_t
+    
+    An array as defined in PH5 is a single channel for a station at a given
+    sampling rate.  Therefore you need an array entry for every channel 
+    collected for every station in the survey.  If the channel is collected
+    at different sampling rates, you need an entry for each.
+    
+    This is also the best place to add any metadata that isn't hard coded in
+    -- apparently --
     
     :param ph5_obj: an open ph5_object
     :param station: station name
@@ -192,7 +196,6 @@ def add_array_to_sorts(ph5_obj, array_name, array_dict):
     location/Z/value_d           elevation value                 float 
     location/Z/units_s           elevation units                 string
     location/coordinate_system_s location coordinate system      string  
-                                 (ex. WGS84) 
     location/projection_s        coordinate projection           string
     location/ellipsoid_s         coordinate ellipsoid            string 
     location/description_s       description of station site     string
@@ -224,6 +227,7 @@ def add_array_to_sorts(ph5_obj, array_name, array_dict):
     receiver_table_n_i           receiver table number           int
     response_table_n_i           response table number           int
     ============================ =============================== ==============
+
     """
     ### make new array in sorts table
     ### make a new sorts array table from given name
@@ -281,10 +285,12 @@ def add_station_group(ph5_obj, station_name):
     
     mini_num = get_current_mini_num(ph5_obj, station_name)
     mini_ph5_obj, filename = open_mini(mini_num, ph5_obj.currentpath)
+    mini_ph5_obj.ph5_g_receivers.setcurrent(das_group_name)
     
     return das_group_name, mini_ph5_obj
     
-def add_channel(das_g_name, channel_dict, channel_array):
+def add_channel(ph5_obj, mini_ph5_obj, station, channel_dict, channel_array,
+                data_type='int32', description=None):
     """
     add channel to station
     
@@ -311,9 +317,66 @@ def add_channel(das_g_name, channel_dict, channel_array):
               not have to input those.
               
     """
+    #Make sure we aren't overwriting a data array
+    count = 1
+    while True:
+        next_num = '{0:05}'.format(count)
+        array_name = "Data_a_{0}".format(next_num)
+        node = mini_ph5_obj.ph5_g_receivers.find_trace_ref(array_name)
+        if not node:
+            break
+        count = count + 1
+        continue
     
+    channel_dict['array_name_data_a'] = array_name
     
-    pass
+    mini_ph5_obj.ph5_g_receivers.newarray(channel_dict['array_name_data_a'],
+                                          channel_array,
+                                          dtype=data_type,
+                                         description=description)
+    channel_dict['response_table_n_i'] = get_response_n(ph5_obj, 
+                                                        station,
+                                                        channel_dict['sample_rate_i'],
+                                                        channel_dict['channel_number_i'])
+    channel_dict['receiver_table_n_i'] = get_receiver_n(ph5_obj, 
+                                                        station,
+                                                        channel_dict['sample_rate_i'],
+                                                        channel_dict['channel_number_i'])
+    mini_ph5_obj.ph5_g_receivers.populateDas_t(channel_dict)
+    
+def get_receiver_n(ph5_obj, station, sample_rate, channel_number):
+    """
+    get receiver table index for given station, given channel
+    """
+    # figure out receiver and response n_i
+    for array_entry in get_arrays(ph5_obj):
+        if (array_entry['sample_rate_i'] == sample_rate and
+            array_entry['channel_number_i'] == channel_number and
+            array_entry['id_s'] == station):
+            return array_entry['receiver_table_n_i']
+
+def get_response_n(ph5_obj, station, sample_rate, channel_number):
+    """
+    get receiver table index for given station, given channel
+    """
+    # figure out receiver and response n_i
+    for array_entry in get_arrays(ph5_obj):
+        if (array_entry['sample_rate_i'] == sample_rate and
+            array_entry['channel_number_i'] == channel_number and
+            array_entry['id_s'] == station):
+            return array_entry['response_table_n_i']
+    
+def get_arrays(ph5_obj):
+    """
+    get array table information
+    """    
+    arrays = []
+    for name in ph5_obj.ph5_g_sorts.names():
+        array_, blah = ph5_obj.ph5_g_sorts.read_arrays(name)
+        for entry in array_:
+            arrays.append(entry)
+            
+    return arrays
 
 def get_das_station_map(ph5_obj):
     """
@@ -325,7 +388,7 @@ def get_das_station_map(ph5_obj):
     """
     array_names = ph5_obj.ph5_g_sorts.namesArray_t()
     if not array_names:
-        return None
+        return []
     station_list = []
     # use tables where to search array tables and find matches
     for _array in array_names:
@@ -334,6 +397,7 @@ def get_das_station_map(ph5_obj):
         data = tbl.read()
         for row in data:
             station_list.append({'serial': row[4][0], 'station': row[13]})
+    
     das_station_map = []
     for station in station_list:
         if station not in das_station_map:
@@ -364,20 +428,18 @@ def get_current_mini_num(ph5_obj, station, first_mini=1,
                 for station in mini_map:
                     if station[0] >= largest:
                         largest = station[0]
-                if (get_size_mini(largest) < mini_size_max):
+                if (mini[2] < mini_size_max):
                     current_mini = largest
                 else:
                     current_mini = largest + 1
     return current_mini
 
-def get_size_mini(mini_num):
+def get_mini_size(mini_fn):
     """
     :param mini_num: str
     :return: size of mini file in bytes
     """
-    mini_num = str(mini_num).zfill(5)
-    mini_path = "miniPH5_{0}.ph5".format(mini_num)
-    return os.path.getsize(mini_path)
+    return os.path.getsize(mini_fn)
 
 def get_mini_list(ph5_path):
     """
@@ -411,17 +473,18 @@ def get_mini_map(mini_list):
         exrec.ph5open(True)
         exrec.initgroup()
         all_das = exrec.ph5_g_receivers.alldas_g()
+        mini_size = get_mini_size(exrec.filename)
         das_list = []
         for g in all_das:
             name = g.split('_')[-1]
             das_list.append(name)
-        mini_map.append((mini_num, das_list))
+        mini_map.append((mini_num, das_list, mini_size))
         exrec.ph5close()
     return mini_map   
 
 def load_json(json_fn):
     """
-    read in ajson file 
+    read in a json file 
     
     :param json_fn: full path to json file to read
     :type json_fn: string
@@ -440,6 +503,7 @@ ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5_py3\ph5\test_data\test.ph5"
 survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
 station_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\station_metadata.json"
 receiver_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\receiver_metadata.json"
+channel_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\channel_metadata.json"
 
 if os.path.exists(ph5_fn):
     os.remove(ph5_fn)
@@ -451,15 +515,29 @@ survey_dict = load_json(survey_json)
 add_survey_metadata(ph5_test_obj, 
                     survey_dict)
 
-### add station
+#### add station
+das_group_name, mini_ph5_obj = add_station_group(ph5_test_obj, 'mt01')
+
+#### add channel data
+### 1 -- add receiver to table
+receiver_dict = load_json(receiver_json)
+n_receiver = add_reciever_to_table(ph5_test_obj, receiver_dict)
+
+### 2 -- add array to sorts
 array_dict = load_json(station_json)
+array_dict['receiver_table_n_i'] = n_receiver
 new_array = add_array_to_sorts(ph5_test_obj, 
                                ph5_test_obj.ph5_g_sorts.nextName(),
                                array_dict)
 
-### add receiver
-receiver_dict = load_json(receiver_json)
-n_receiver = add_reciever_to_table(ph5_test_obj, receiver_dict)
+### 3 -- add array data
+channel_dict = load_json(channel_json)
+add_channel(ph5_test_obj, mini_ph5_obj, 'mt01', channel_dict, 
+            np.random.randint(2**12, size=2**16, dtype=np.int32))
+
+### TODO: need to add time index table and external references
+
+
 
 ### Add a column to metadata table 
 #add_column_to_experiment_t(ph5_test_obj, 
