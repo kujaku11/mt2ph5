@@ -1,0 +1,11 @@
+{"serial_number_s":"MT01",
+ "start_time/ascii_s":"2019-01-02T12:30:10.010",
+ "start_time/epoch_l":123456789,
+ "start_time/micro_seconds_l":10,
+ "start_time/type_s":"both",
+ "serial_number_s":"MT01",
+ "end_time/ascii_s":"2019-01-03T12:30:10.010",
+ "end_time/epoch_l":123656789,
+ "end_time/micro_seconds_l":10,
+ "end_time/type_s":"both"
+}
