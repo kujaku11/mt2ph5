@@ -82,6 +82,17 @@ def load_json(json_fn):
         
     return return_dict
 
+def check_timezone(dt_object):
+    """
+    make sure the dt_object is aware of being UTC
+    """
+    
+    if dt_object.tzinfo is None or dt_object.tzinfo != datetime.timezone.utc:
+        return dt_object.replace(tzinfo=datetime.timezone.utc)
+    
+    return dt_object        
+    
+
 def validate_time_metadata(meta_dict):
     """
     validate the time in a given data dictionary to be sure that the ascii
@@ -94,13 +105,13 @@ def validate_time_metadata(meta_dict):
             continue
         base = key.split('/')[0]
         if 'ascii_s' in key:
-            t_keys[base]['ascii_s'] = dateutil.parser.parse(value)     
+            t_keys[base]['ascii_s'] = check_timezone(dateutil.parser.parse(value))     
         elif 'epoch' in key:
             try:
                 value += meta_dict['{0}/{1}'.format(base, 'micro_seconds_i')]
             except KeyError:
                 pass
-            t_keys[base]['epoch_l'] = datetime.datetime.fromtimestamp(float(value))
+            t_keys[base]['epoch_l'] = check_timezone(datetime.datetime.fromtimestamp(float(value)))
             
     for t_key, t_value in t_keys.items():
         dt_obj_s = None
@@ -142,9 +153,6 @@ def validate_time_metadata(meta_dict):
     
     return meta_dict
         
-            
-    
-
 # =============================================================================
 #  A generic class with tools to convert any data into PH5
 # =============================================================================
@@ -708,7 +716,7 @@ class generic2ph5(object):
             entry_dict['end_time/{0}'.format(t_key)] = meta_dict['pickup_time/{0}'.format(t_key)]
     
         ### make time stamp
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
         entry_dict['time_stamp/ascii_s'] = now.isoformat()
         entry_dict['time_stamp/epoch_l'] = int(now.timestamp())
         entry_dict['time_stamp/micro_seconds_i'] = now.microsecond
