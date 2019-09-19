@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 """
+==============
+PH5 Tools
+==============
+
+These are generic tools for building a PH5 file.  They are pretty basic to 
+hopefully make it easier to adapt different data types.
+
+TODO: 
+    - validate ascii and epoch times from metadata dictionaries
+    - validate PH5 file made from tests.
+    - try more difficult tests.
+
+
 Created on Wed Jul 17 17:05:20 2019
 
 @author: jpeacock
@@ -8,10 +21,8 @@ Created on Wed Jul 17 17:05:20 2019
 # =============================================================================
 # Imports
 # =============================================================================
-import logging
 import os
 import re
-import glob
 import json
 from pathlib import Path
 import numpy as np
@@ -22,6 +33,11 @@ from ph5.core import experiment
 from ph5.core import columns
 
 # =============================================================================
+# global variables
+# =============================================================================
+t_list = ['ascii_s', 'epoch_l', 'micro_seconds_i', 'type_s']
+
+# =============================================================================
 # Begin tools
 # =============================================================================
 def read_date_time(time_string):
@@ -30,7 +46,7 @@ def read_date_time(time_string):
     
     :param str time_string: time string date-time
     
-    :returns: iso-format, epoch, microseconds
+    :return: iso-format, epoch, microseconds
     """
     
     dt_obj = dateutil.parser.parse(time_string)
@@ -59,12 +75,75 @@ def load_json(json_fn):
     :param json_fn: full path to json file to read
     :type json_fn: string
     
-    :returns: dictionary of metadata
+    :return: dictionary of metadata
     """
     with open(json_fn, 'r') as fid:
         return_dict = json.load(fid)
         
     return return_dict
+
+def validate_time_metadata(meta_dict):
+    """
+    validate the time in a given data dictionary to be sure that the ascii
+    is the same as the epoch
+    """
+    t_keys = {'deploy_time':{}, 'pickup_time':{}, 'start_time':{},
+              'end_time':{}, 'time_stamp':{}}
+    for key, value in meta_dict.items():
+        if 'declination' in key:
+            continue
+        base = key.split('/')[0]
+        if 'ascii_s' in key:
+            t_keys[base]['ascii_s'] = dateutil.parser.parse(value)     
+        elif 'epoch' in key:
+            try:
+                value += meta_dict['{0}/{1}'.format(base, 'micro_seconds_i')]
+            except KeyError:
+                pass
+            t_keys[base]['epoch_l'] = datetime.datetime.fromtimestamp(float(value))
+            
+    for t_key, t_value in t_keys.items():
+        dt_obj_s = None
+        dt_obj_e = None
+        try:
+            dt_obj_s = t_value['ascii_s']
+        except KeyError:
+            pass
+        try:
+            dt_obj_e = t_value['epoch_l']
+        except KeyError:
+            pass
+
+        if dt_obj_e and dt_obj_s:
+            if dt_obj_e != dt_obj_s:
+                print('ascii time and epoch time are different.')
+                print('ascii time is {0}'.format(dt_obj_s.isoformat()))
+                print('epoch time is {0}'.format(dt_obj_e.isoformat()))
+                print('Difference is {0}'.format(dt_obj_s - dt_obj_e))
+                print('Using ascii time as the correct one')
+                iso, ts, ms = read_date_time(dt_obj_s.isoformat())
+                t_dict = {'ascii_s':iso, 'epoch_l':ts, 'micro_seconds_i':ms}
+                for s_key, s_value in t_dict.items():
+                    meta_dict['{0}/{1}'.format(t_key, s_key)] = s_value
+        elif not dt_obj_e and not dt_obj_s:
+            continue
+                
+        elif not dt_obj_e:
+            iso, ts, ms = read_date_time(dt_obj_s.isoformat())
+            t_dict = {'ascii_s':iso, 'epoch_l':ts, 'micro_seconds_i':ms}
+            for s_key, s_value in t_dict.items():
+                    meta_dict['{0}/{1}'.format(t_key, s_key)] = s_value
+                
+        elif not dt_obj_s:
+            iso, ts, ms = read_date_time(dt_obj_e.isoformat())
+            t_dict = {'ascii_s':iso, 'epoch_l':ts, 'micro_seconds_i':ms}
+            for s_key, s_value in t_dict.items():
+                    meta_dict['{0}/{1}'.format(t_key, s_key)] = s_value
+    
+    return meta_dict
+        
+            
+    
 
 # =============================================================================
 #  A generic class with tools to convert any data into PH5
@@ -78,7 +157,14 @@ class generic2ph5(object):
     There are quite a few subtilties that one needs to keep track of.  As far 
     as I understand it the way to convert your data would be as follows
     
-        1.  
+        1. Get your metadata into dictionaries following the formats below
+        2. Make a ph5 file
+        3. Add receiver metadata 
+        ..note:: there should be one entry per channel per station, if the 
+                 channels changed for some reason this should be a separate
+                 entry.
+        4. Loop over each station and add in channel data and metadata.
+        
     
     """
     
@@ -103,22 +189,29 @@ class generic2ph5(object):
         
         :return: an open ph5 object
         :rtype: PH5.Expermiment
+        
+        :Example:
+            
+        >>> ph5_obj = generic2ph5()
+        >>> ph5_obj.open_ph5_file("/home/test/test.ph5")
+    
         """
         
         ph5_path = Path(ph5_fn)
         
-        ph5_obj = experiment.ExperimentGroup(nickname=ph5_path.name,
+        self.ph5_obj = experiment.ExperimentGroup(nickname=ph5_path.name,
                                              currentpath=ph5_path.parent)
-        ph5_obj.ph5open(True)
-        ph5_obj.initgroup()
+        self.ph5_obj.ph5open(True)
+        self.ph5_obj.initgroup()
         
         print("Made PH5 File {0}".format(ph5_path))
-        
-        self.ph5_obj
     
     def get_arrays(self):
         """
-        get array table information
+        read in each array entry as a dictionary from sorts group and append
+        to a list.
+        
+        :return: list of sorts group array table entries 
         """    
         arrays = []
         for name in self.ph5_obj.ph5_g_sorts.names():
@@ -128,13 +221,19 @@ class generic2ph5(object):
                 
         return arrays
     
-    def get_das_station_map(self):
+    @property
+    def das_station_map(self):
         """
-        Checks if array tables exist
-        returns None
-        otherwise returns a list of dictionaries
-        containing das serial numbers and stations
-        :return: list
+        das_station_map originates from the different array tables in the 
+        sorts group.  It is a list of dictionaries with entries
+            
+            * serial --> serial number of data logger
+            * station --> station name
+            * array_name --> name of array in sorts table
+            
+        :return: list of dictionaries
+        
+        .. note:: If there are no array entries returns and empty list
         """
         array_names = self.ph5_obj.ph5_g_sorts.namesArray_t()
         if not array_names:
@@ -161,10 +260,13 @@ class generic2ph5(object):
     def get_sort_array_name(self, station):
         """
         get the sort array name for a given station
+        
+        :return: name of array table associated with the given station
+        
+        .. note:: station name should be verbatim or close
         """
         
-        das_station_map = get_das_station_map(self.ph5_obj)
-        for entry in das_station_map:
+        for entry in self.das_station_map:
             ### the entry is binary, need to decode into unicode
             if station in entry['station'].decode():
                 return entry['array_name']
@@ -172,14 +274,14 @@ class generic2ph5(object):
         
     def open_mini(self, mini_num):
         """
-        Open PH5 file, miniPH5_xxxxx.ph5
-        :type: str
+        Open a mini PH5 file with the name miniPH5_xxxxx.ph5
+        
         :param mini_num: name of mini file to open
-        :return class: ph5.core.experiment, str: name
+        
+        :return: class: ph5.core.experiment, str: name
         """
-    
-        mini_num = '{0:05}'.format(mini_num)
-        filename = "miniPH5_{0}.ph5".format(mini_num)
+
+        filename = "miniPH5_{0:05}.ph5".format(mini_num)
         mini_ph5_obj = experiment.ExperimentGroup(nickname=filename,
                                                   currentpath=self.ph5_path)
         mini_ph5_obj.ph5open(True)
@@ -190,26 +292,31 @@ class generic2ph5(object):
     def get_current_mini_num(self, station, first_mini=1,
                              mini_size_max = 26843545600):
         """
-        get the current mini number
+        get the current mini number for the given station.
+        
+        :param str station: station name
+        :param int first_mini: number of the first mini PH5 file
+        :param int mini_size_max: maximum size of each mini PH5 file
+        
+        :return: current mini number.
+        
         """    
-        mini_list = get_mini_list(self.ph5_path)
+        mini_list = self.get_mini_list()
         if not mini_list:
             current_mini = first_mini
         else:
-            current_mini = None
-            mini_map = get_mini_map(mini_list)
-            das_station_map = get_das_station_map(self.ph5_obj) 
-            for mini in mini_map:
-                for entry in das_station_map:
-                    if (entry['serial'] in mini[1] and
+            current_mini = None 
+            for mini in self.mini_map:
+                for entry in self.das_station_map:
+                    if (entry['serial'] in mini['das_list'] and
                             entry['station'] == station):
-                        current_mini = mini[0]
+                        current_mini = mini['num']
                 if not current_mini:
                     largest = 0
-                    for station in mini_map:
-                        if station[0] >= largest:
-                            largest = station[0]
-                    if (mini[2] < mini_size_max):
+                    for station in self.mini_map:
+                        if station['num'] >= largest:
+                            largest = station['num']
+                    if (mini['size'] < mini_size_max):
                         current_mini = largest
                     else:
                         current_mini = largest + 1
@@ -227,8 +334,6 @@ class generic2ph5(object):
         takes a directory and returns a list of all mini files
         in the current directory
     
-        :type str
-        :param dir
         :return: list of mini files
         """
         miniPH5RE = re.compile(r".*miniPH5_(\d+)\.ph5")
@@ -240,26 +345,34 @@ class generic2ph5(object):
                 mini_list.append(mini_path)
         return mini_list
     
-    def get_mini_map(self, mini_list):
+    @property
+    def mini_map(self):
         """
-        :type list
-        :param existing_minis: A list of mini_files with path
-        :return:  list of tuples containing
-        what mini file contains what serial #s
+        mini_map is a list of dictionaries describing properties of existing
+        mini files with keys
+        
+            * num --> mini file number
+            * das_list --> list of stations associated with that mini file
+            * size --> size of mini file in bytes
+        
+        :return: list of dictionaries containing what mini file contains 
+                 what serial #s
         """
         mini_map = []
-        for mini_fn in mini_list:
+        for mini_fn in self.get_mini_list():
             mini_num = int(mini_fn.split('.')[-2].split('_')[-1])
             exrec = experiment.ExperimentGroup(nickname=mini_fn)
             exrec.ph5open(True)
             exrec.initgroup()
             all_das = exrec.ph5_g_receivers.alldas_g()
-            mini_size = get_mini_size(exrec.filename)
+            mini_size = self.get_mini_size(exrec.filename)
             das_list = []
             for g in all_das:
                 name = g.split('_')[-1]
                 das_list.append(name)
-            mini_map.append((mini_num, das_list, mini_size))
+            mini_map.append({'num':mini_num,
+                             'das_list':das_list,
+                             'size':mini_size})
             exrec.ph5close()
             
         return mini_map   
@@ -269,7 +382,7 @@ class generic2ph5(object):
         """
         add survey metdata to experiment table
         
-        survey_dict
+        :param dict survey_dict: survey dictionary with keys 
         
         ===================================== =============================== ======
         Key                                   Description                     Type
@@ -307,6 +420,7 @@ class generic2ph5(object):
         summary_paragraph_s                   summary of survey (1024 char.)  string
         ===================================== =============================== ======
         """
+        survey_dict = validate_time_metadata(survey_dict)
         
         keys_not_added = columns.append(self.ph5_obj.ph5_g_experiment.Experiment_t,
                                         survey_dict)
@@ -330,7 +444,14 @@ class generic2ph5(object):
     def add_column_to_experiment_t(self, new_col_name, new_col_values, 
                                    new_col_type, type_len=32):
         """
-        Add a column to experiment table
+        Add a column to experiment table in case it doesn't exist
+        
+        :param str new_col_name: new column name
+        :param str new_col_values: new column values
+        :param str new_col_type: new column data type
+        :param int type_len: length of new data type
+        
+        :return: new table with added columns
         
         """
         
@@ -359,14 +480,12 @@ class generic2ph5(object):
         This is also the best place to add any metadata that isn't hard coded in
         -- apparently --
         
-        :param ph5_obj: an open ph5_object
-        :param station: station name
-        :type station: string
+        :param object ph5_obj: an open ph5_object
+        :param str station: station name
         
-        :param station_dict: dictionary containing important metadata
-        :type station_dict: dictionary
+        :param dict station_dict: dictionary containing important metadata
         
-        :returns: new array name
+        :return: new array name
         
         station_dict should have
         
@@ -412,8 +531,8 @@ class generic2ph5(object):
         receiver_table_n_i           receiver table number           int
         response_table_n_i           response table number           int
         ============================ =============================== ==============
-    
         """
+        array_dict = validate_time_metadata(array_dict)
         ### make new array in sorts table
         ### make a new sorts array table from given name
         if not array_name in self.ph5_obj.ph5_g_sorts.namesArray_t():
@@ -424,7 +543,19 @@ class generic2ph5(object):
     
     def add_reciever_to_table(self, receiver_dict):
         """
-        Add a receiver to the receivers table
+        Add a receiver metadata to the receivers table
+        
+        :param dict receiver_dict: dictionary of metadata for single receiver
+        
+        ========================= ================================= ===========
+        Key                       Description                       Type   
+        ========================= ================================= ===========
+        orientation/description_s orientation description           string
+        azimuth/value_f           azimuth value in orientation      float
+        azimuth/units_s           units of azimuth                  string
+        dip/value_f               dip angle                         float
+        dip/units_s               units of azimuth                  string 
+        ========================= ================================= ===========
         """
         ### add receiver information to table
         self.ph5_obj.ph5_g_receivers.populateReceiver_t(receiver_dict)
@@ -448,14 +579,13 @@ class generic2ph5(object):
         """
         Make a station mini_ph5_xxxxx file
         
-        :param station_name: station name
-        :type station_name: string
+        :param str station_name: station name
         
-        :returns: das_group_name, mini_ph5_object
+        :return: das_group_name, mini_ph5_object
         """
         ### get mini number first
-        mini_num = self.get_current_mini_num(self.ph5_obj, station_name)
-        mini_ph5_obj, filename = self.open_mini(mini_num, self.ph5_path)
+        mini_num = self.get_current_mini_num(station_name)
+        mini_ph5_obj, filename = self.open_mini(mini_num)
         
         ### make sure there is a station group
         das_group = mini_ph5_obj.ph5_g_receivers.getdas_g(station_name)
@@ -463,14 +593,70 @@ class generic2ph5(object):
             das_group, dt, rt, tt = mini_ph5_obj.ph5_g_receivers.newdas(station_name)
         mini_ph5_obj.ph5_g_receivers.setcurrent(das_group)
         
-        return das_group_name, mini_ph5_obj
+        return das_group, mini_ph5_obj
     
-    def add_channel(self, mini_ph5_obj, station, channel_dict, channel_array,
-                    channel_meta_dict, data_type='int32', description=None):
+    def add_channel(self, mini_ph5_obj, station, array_dict, channel_array,
+                    data_type='int32', description=None):
         """
-        add channel to station
+        add channel to station mini PH5 file
         
-        channel dict
+        :param object mini_ph5_obj: mini PH5 object
+        :param str station: station name
+        :param array channel_array: data array
+        :param dict channel_meta_dict: channel 
+            
+        """
+        array_dict = validate_time_metadata(array_dict)
+        #Make sure we aren't overwriting a data array
+        count = 1
+        while True:
+            next_num = '{0:05}'.format(count)
+            data_array_name = "Data_a_{0}".format(next_num)
+            node = mini_ph5_obj.ph5_g_receivers.find_trace_ref(data_array_name)
+            if not node:
+                break
+            count = count + 1
+            continue
+        
+        ### get channel dictionary from array metadata
+        channel_dict = self.make_channel_entry(array_dict)
+        channel_dict['sample_count_i'] = len(channel_array)
+        
+        ### add the appropriate array name to the metadata
+        channel_dict['array_name_data_a'] = data_array_name
+        
+        ### create new data array
+        mini_ph5_obj.ph5_g_receivers.newarray(channel_dict['array_name_data_a'],
+                                              channel_array,
+                                              dtype=data_type,
+                                              description=description)
+        
+        ### add the channel metadata to the das table
+        mini_ph5_obj.ph5_g_receivers.populateDas_t(channel_dict)
+        
+        ### add channel metadata to appropriate sorts array
+        sorts_array_name = self.get_sort_array_name(station)
+        self.add_array_to_sorts(sorts_array_name, array_dict)
+        
+        ### make time index entry
+        t_index_entry = self.make_time_index_entry(array_dict,
+                                                   mini_ph5_obj.nickname)
+        self.ph5_obj.ph5_g_receivers.populateIndex_t(t_index_entry)
+        
+        ### update external references
+        self.update_external_reference(t_index_entry)
+        
+        return t_index_entry
+    
+    def make_channel_entry(self, meta_dict):
+        """
+        make a channel dictionary from array dictionary 
+        
+        :param dict meta_dict: array channel metadata from sorts group
+        
+        .. seealso:: add_array_to_sorts
+        
+        Makes a dictionary with keys
         
         ============================ =============================== ==============
         Key                          Description                     Type 
@@ -491,58 +677,29 @@ class generic2ph5(object):
     
         .. note:: should find receiver, response number automatically, user should 
                   not have to input those.
-                  
+        
         """
-        #Make sure we aren't overwriting a data array
-        count = 1
-        while True:
-            next_num = '{0:05}'.format(count)
-            data_array_name = "Data_a_{0}".format(next_num)
-            node = mini_ph5_obj.ph5_g_receivers.find_trace_ref(data_array_name)
-            if not node:
-                break
-            count = count + 1
-            continue
-        
-        ### add the appropriate array name to the metadata
-        channel_dict['array_name_data_a'] = data_array_name
-        
-        ### create new data array
-        mini_ph5_obj.ph5_g_receivers.newarray(channel_dict['array_name_data_a'],
-                                              channel_array,
-                                              dtype=data_type,
-                                              description=description)
-        
+        channel_dict = {}
+        for t_key in t_list:
+            channel_dict['time/{0}'.format(t_key)] = meta_dict['deploy_time/{0}'.format(t_key)]
+        for key in ['sample_rate_i', 'sample_rate_multiplier_i', 'channel_number_i']:
+            channel_dict[key] = meta_dict[key]
+            
         ### add response table entry number to metadata
-        channel_dict['response_table_n_i'] = self.get_response_n(station,
+        channel_dict['response_table_n_i'] = self.get_response_n(meta_dict['id_s'],
                     channel_dict['sample_rate_i'],
                     channel_dict['channel_number_i'])
         ### add receiver table entry number to metadata
-        channel_dict['receiver_table_n_i'] = self.get_receiver_n(station,
+        channel_dict['receiver_table_n_i'] = self.get_receiver_n(meta_dict['id_s'],
                     channel_dict['sample_rate_i'],
                     channel_dict['channel_number_i'])
-        ### add the channel metadata to the das table
-        mini_ph5_obj.ph5_g_receivers.populateDas_t(channel_dict)
         
-        ### add channel metadata to appropriate sorts array
-        sorts_array_name = self.get_sort_array_name(station)
-        self.add_array_to_sorts(sorts_array_name, channel_meta_dict)
-        
-        ### make time index entry
-        t_index_entry = self.make_time_index_entry(channel_meta_dict,
-                                                   mini_ph5_obj.nickname)
-        self.ph5_obj.ph5_g_receivers.populateIndex_t(t_index_entry)
-        
-        ### update external references
-        self.update_external_reference(t_index_entry)
-        
-        return t_index_entry
+        return channel_dict
     
     def make_time_index_entry(self, meta_dict, mini_name):
         """
         make a time index entry
         """
-        t_list = ['ascii_s', 'epoch_l', 'micro_seconds_i', 'type_s']
         
         entry_dict = {}
         entry_dict['serial_number_s'] = meta_dict['id_s']
@@ -595,22 +752,24 @@ class generic2ph5(object):
         get receiver table index for given station, given channel
         """
         # figure out receiver and response n_i
-        for array_entry in get_arrays(self.ph5_obj):
+        for array_entry in self.get_arrays():
             if (array_entry['sample_rate_i'] == sample_rate and
                 array_entry['channel_number_i'] == channel_number and
                 array_entry['id_s'] == station):
                 return array_entry['receiver_table_n_i']
+        return 0
     
     def get_response_n(self, station, sample_rate, channel_number):
         """
         get receiver table index for given station, given channel
         """
         # figure out receiver and response n_i
-        for array_entry in get_arrays(self.ph5_obj):
+        for array_entry in self.get_arrays():
             if (array_entry['sample_rate_i'] == sample_rate and
                 array_entry['channel_number_i'] == channel_number and
                 array_entry['id_s'] == station):
                 return array_entry['response_table_n_i']
+        return 0
 
 
 
@@ -627,40 +786,30 @@ channel_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\channel_metadata.json
 if os.path.exists(ph5_fn):
     os.remove(ph5_fn)
 
-ph5_test_obj = open_ph5_file(ph5_fn)
+ph5_test_obj = generic2ph5()
+ph5_test_obj.open_ph5_file(ph5_fn)
 
 ### add Survey metadata to file
 survey_dict = load_json(survey_json)
-add_survey_metadata(ph5_test_obj, 
-                    survey_dict)
+ph5_test_obj.add_survey_metadata(survey_dict)
 
 #### add station
-das_group_name, mini_ph5_obj = add_station_mini(ph5_test_obj, 'mt01')
+das_group_name, mini_ph5_obj = ph5_test_obj.add_station_mini('mt01')
 
 #### add channel data
 ### 1 -- add receiver to table
 receiver_dict = load_json(receiver_json)
-n_receiver = add_reciever_to_table(ph5_test_obj, receiver_dict)
+n_receiver = ph5_test_obj.add_reciever_to_table(receiver_dict)
 
 ### 2 -- add array to sorts
 array_dict = load_json(station_json)
 array_dict['receiver_table_n_i'] = n_receiver
-new_array = add_array_to_sorts(ph5_test_obj, 
-                               ph5_test_obj.ph5_g_sorts.nextName(),
-                               array_dict)
+new_array = ph5_test_obj.add_array_to_sorts(ph5_test_obj.ph5_obj.ph5_g_sorts.nextName(),
+                                            array_dict)
 
 ### 3 -- add array data
 channel_dict = load_json(channel_json)
-t_entry = add_channel(ph5_test_obj, mini_ph5_obj, 'mt01', channel_dict, 
-                      np.random.randint(2**12, size=2**16, dtype=np.int32),
-                      array_dict)
+t_entry = ph5_test_obj.add_channel(mini_ph5_obj, 'mt01', array_dict, 
+                                   np.random.randint(2**12, size=2**16,
+                                                     dtype=np.int32))
 
-### TODO: need to add time index table and external references
-
-
-
-### Add a column to metadata table 
-#add_column_to_experiment_t(ph5_test_obj, 
-#                           'declination_d',
-#                           [10.5], 
-#                           'float')
