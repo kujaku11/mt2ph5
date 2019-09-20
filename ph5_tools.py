@@ -7,8 +7,11 @@ PH5 Tools
 These are generic tools for building a PH5 file.  They are pretty basic to 
 hopefully make it easier to adapt different data types.
 
+.. note:: All times entered are validated to be UTC and be consistent between
+          ascii and epoch times.  If there is a difference ascii format is
+          assumed to be the correct one.
+
 TODO: 
-    - validate ascii and epoch times from metadata dictionaries
     - validate PH5 file made from tests.
     - try more difficult tests.
 
@@ -49,7 +52,7 @@ def read_date_time(time_string):
     :return: iso-format, epoch, microseconds
     """
     
-    dt_obj = dateutil.parser.parse(time_string)
+    dt_obj = check_timezone(dateutil.parser.parse(time_string))
     
     return dt_obj.isoformat(), int(dt_obj.timestamp()), dt_obj.microsecond
 
@@ -481,19 +484,21 @@ class generic2ph5(object):
             * will add entry to Sorts_t
         
         An array as defined in PH5 is a single channel for a station at a given
-        sampling rate.  Therefore you need an array entry for every channel 
-        collected for every station in the survey.  If the channel is collected
-        at different sampling rates, you need an entry for each.
+        sampling rate.  Therefore you need an array table for each station.
+        Within this table you will need an array entry for every channel 
+        collected for every run/schedule time for the given station.
         
-        This is also the best place to add any metadata that isn't hard coded in
-        -- apparently --
+        This is also the best place to add any metadata that isn't hard coded
+        in apparently.
         
-        :param object ph5_obj: an open ph5_object
-        :param str station: station name
+        ..note:: If the array name already exists it will just add another row
+                 to the existing array table.
         
-        :param dict station_dict: dictionary containing important metadata
+        :param str array_name: name of array --> Array_t_xxxxx
         
-        :return: new array name
+        :param dict array_dict: dictionary containing important metadata
+        
+        :return: array name
         
         station_dict should have
         
