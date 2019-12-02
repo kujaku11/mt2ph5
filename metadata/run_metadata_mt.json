@@ -1,0 +1,14 @@
+{
+    "ID_s": "run ID",
+    "notes_s": "notes on run",
+    "start_time/value_s": "start time of data logging [ UTC ]",
+    "end_time/value_s": "stop time of data logging [ UTC ]",
+    "sampling_rate_d": "sampling rate of run (samples/second)",
+    "num_channels_i": "number of channels recorded",
+    "channels_recorded_s": "list of channels recorded [ [EX, EY, HX, HY] | ...]",
+    "data_type _s": "type of data collected [ BB | LP | AMT | Combo | ...]",
+    "acquired_by/author_s": "person(s) responsible for run",
+    "acquired_by/email_s": "email of lead run operator",
+    "provenance/notes_s": "any notes on the history of the data",
+    "provenance/log_s": "log of any changes made to time series data. (can this be automated?)"
+}

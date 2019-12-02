@@ -1,0 +1,37 @@
+Metadata for Station: Includes metadata for a single station.,,,,
+Parameter,Type,Requirement,Explanation,Alias
+sta_code_s,string,compulsory,5 char name of station,
+name_s,string,compulsory,name station site,ID
+latitude/value_d,float,compulsory,longitude location [ degrees (hh.mmss) ],
+longitude/value_d,float,compulsory,latitude location [ degrees (hh.mmss) ],
+z/value_d,float,compulsory,z location [ m ],
+notes_s,string,optional,any notes about station,
+datum_s,string,compulsory,"datum for x, y, z location",
+reference_ellipsoid_s,string,compulsory,reference ellipsoid,
+start_time/value_s,string,compulsory,start time of data logging [ UTC ],"start_date, deploy_time, deploy_date"
+end_time/value_s,string,compulsory,stop time of data logging  [ UTC ],"start_date, deploy_time, deploy_date"
+num_channels_i,int,compulsory,number of channels recording,
+channels_recorded_s,string,compulsory,"list of channels recorded [ EX, EY, HX, HY, HZ | ...]",
+data_type_s,string,compulsory,type of data collected [ BB | LP | AMT | Combo | ...],
+declination/value_d,float,compulsory,declination value,
+declination/units_s,string,compulsory,declination units [ deg | radians | ...],
+declination/epoch_s,string,compulsory,declination epoch,
+declination/model_s,string,compulsory,declination model,
+station_orientation_s,string,compulsory,orientation coordinate system [ geographic | channel-measurement specific ],coordinate_system
+orientation_method_s,string,optional,"compass, differential GPS, gyroscope, etc.",
+acquired_by/author_s,string,compulsory,person(s) operating station,name
+acquired_by/email_s,string,compulsory,email of lead station operator,
+provenance/creation_time_s,string,compulsory,creation time of time series data for storing,
+provenance/software/name_s,string,compulsory,name of software used to store time series,
+provenance/software/version_s,string,compulsory,version of software used to store time series,
+provenance/software/author_s,string,compulsory,author of software used to store time series,
+provenance/creator/author_s,string,compulsory,name of person or group creating archive data,name
+provenance/creator/organization_s,string,compulsory,name of organization or institution creating archive data,institution
+provenance/creator/url_s,string,compulsory,url of group creating archive data,
+provenance/creator/email_s,string,compulsory,email of person or group creating archive data,
+provenance/submitter/author_s,string,compulsory,name of person or group submitting archive data,name
+provenance/submitter/organization_s,string,compulsory,name of organization or institution submitting archive data,institution
+provenance/submitter/url_s,string,compulsory,url of group submitting archive data,
+provenance/submitter/email_s,string,compulsory,email of person or group submitting archive data,
+provenance/notes_s,string,optional,any notes on the history of the data,
+provenance/log_s,string,optional,log of any changes made to time series data. (can this be automated?),

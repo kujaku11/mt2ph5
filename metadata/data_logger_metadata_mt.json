@@ -1,0 +1,22 @@
+{
+    "manufacturer": "manufacturer name",
+    "model": "model name",
+    "serial": "serial number",
+    "notes": "notes about data logger",
+    "timing_system/type": "type of timing system --> [GPS | internal | ... ]",
+    "timing_system/drift": "any drift in internal clock",
+    "timing_system/uncertainty": "uncertainty associated with internal clock",
+    "timing_system/notes": "notes on timing system",
+    "firmware/version": "firmware version",
+    "firmware/date": "date on firmware",
+    "firmware/author": "author of firmware",
+    "n_channels": "number of channels",
+    "n_channels_used": "number of channels used",
+    "calibration/filename": "calibration file or link for data logger",
+    "calibration/date": "calibration date",
+    "calibration/notes": "notes on calibration",
+    "power_source/type": "power source type [ Pb-acid battery | solar panel | Li battery | ...]",
+    "power_source/start_voltage": "starting voltage of power source",
+    "power_source/end_voltage": "ending voltage of power source",
+    "power_source/notes": "notes on power source"
+}

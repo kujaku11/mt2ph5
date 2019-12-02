@@ -1,0 +1,14 @@
+"Metadata for Run: Information on a single run, a run is one setup with one sampling rate",,,,
+Parameter,Type,Requirement,Explanation,Alias
+ID_s,string,compulsory,run ID,
+notes_s,string,optional,notes on run,
+start_time/value_s,string,compulsory,start time of data logging [ UTC ],"start_date, deploy_time, deploy_date"
+end_time/value_s,string,compulsory,stop time of data logging [ UTC ],"start_date, deploy_time, deploy_date"
+sampling_rate_d,float,compulsory,sampling rate of run (samples/second),
+num_channels_i,int,compulsory,number of channels recorded,
+channels_recorded_s,string,compulsory,"list of channels recorded [ [EX, EY, HX, HY] | ...]",
+data_type _s,string,compulsory,type of data collected [ BB | LP | AMT | Combo | ...],
+acquired_by/author_s,string,compulsory,person(s) responsible for run,name
+acquired_by/email_s,string,compulsory,email of lead run operator,
+provenance/notes_s,string,optional,any notes on the history of the data,
+provenance/log_s,string,optional,log of any changes made to time series data. (can this be automated?),
