@@ -375,6 +375,10 @@ class MTtoPH5(object):
         das_t_entry = self.make_das_entry(ts_obj)
         receiver_t_entry = self.make_receiver_t_entry(ts_obj)
         
+        ### add receiver entry number
+        das_t_entry['receiver_table_n_i'] = count
+        das_t_entry['response_table_n_i'] = count
+        
         ### get the current mini file
         current_mini = self.get_current_mini(ts_obj)
         mini_handle, mini_name = self.open_mini(current_mini)
