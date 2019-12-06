@@ -19,10 +19,12 @@ import glob
 from ph5.core import experiment
 from mtpy.core import ts as mtts
 from mtpy.usgs import zen
-from usgs_archive import nims
+from mtpy.usgs import nims
+### inheret ph5_tools.generic to_ph5
+#from mt2ph5 import ph5_tools
 
 PROG_VERSION = '2019.65'
-LOGGER = logging.getLogger(__name__)
+#LOGGER = logging.getLogger(__name__)
 
 # =============================================================================
 # Class
@@ -122,11 +124,21 @@ class MTtoPH5(object):
         self.verbose = False
         self.array_names = self.ph5.ph5_g_sorts.names()
         self.arrays = list()
+        
+        ### logging
+        self.logger = logging.getLogger('MTtoPH5')
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(logging.FileHandler(os.path.join(self.ph5_path, 
+                                                                'MTtoPH5.log'),
+                                'w'))
+    
         for name in self.array_names:
             array_, blah = self.ph5.ph5_g_sorts.read_arrays(name)
             for entry in array_:
                 self.arrays.append(entry)
         self.time_t = list()
+        
+        
 
     def open_mini(self, mini_num):
         """
@@ -144,6 +156,9 @@ class MTtoPH5(object):
                                            currentpath=self.ph5_path)
         exrec.ph5open(True)
         exrec.initgroup()
+        self.logger.info('Making mini file {0}'.format(filename))
+        
+        
         return exrec, filename
 
     def get_minis(self, directory):
@@ -309,6 +324,15 @@ class MTtoPH5(object):
         
         return das
     
+    def make_array_entry(self, ts_obj):
+        """
+        Make an array entry that will go into the sorts group of the main 
+        Experiment object.
+        
+        
+        """
+        pass
+    
     def load_ts_obj(self, ts_fn):
         """
         load an MT file
@@ -316,19 +340,23 @@ class MTtoPH5(object):
         if isinstance(ts_fn, str):
             ext = os.path.splitext(ts_fn)[-1][1:].lower()
             if ext == 'z3d':
+                self.logger.info('Opening Z3D file {0}'.format(ts_fn))
                 z3d_obj = zen.Zen3D(ts_fn)
                 z3d_obj.read_z3d()
                 ts_obj = z3d_obj.ts_obj
             elif ext in ['ex', 'ey', 'hx', 'hy', 'hz']:
+                self.logger.info('Opening ascii file {0}'.format(ts_fn))
                 ts_obj = mtts.MTTS()
                 ts_obj.read_file(ts_fn)
-            elif ext == 'bnn':
+            elif ext in  ['bnn', 'bin']:
+                self.logger.info('Opening NIMS file {0}'.format(ts_fn))
                 nims_obj = nims.NIMS(ts_fn)
                 ts_obj = [nims_obj.hx, nims_obj.hy, nims_obj.hz, nims_obj.ex, 
                           nims_obj.ey]
                 
         elif isinstance(ts_fn, mtts.MTTS):
             ts_obj = ts_fn
+            self.logger.info('Loading MT object')
         else:
             raise mtts.MTTSError("Do not understand {0}".format(type(ts_fn)))
             
@@ -419,6 +447,9 @@ class MTtoPH5(object):
         # Don't forget to close minifile
         mini_handle.ph5close()
         
+        self.logger.info('Loaded {0} to mini file {1}'.format(ts_obj.fn, 
+                         mini_name))
+        
         return index_t_entry, count
         
 
@@ -482,9 +513,7 @@ class MTtoPH5(object):
                     '/Experiment_g/Receivers_g', external_group, target)
                 n += 1
             except Exception as e:
-                # pass
-                print(e)
-                #LOGGER.error(e.message)
+                self.logger(e.message)
 
         return
 
@@ -493,7 +522,7 @@ class MTtoPH5(object):
 # =============================================================================
 #ts_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\ts_test.EX"
 ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\test_ph5.ph5"
-nfn = r"c:\Users\jpeacock\Downloads\data_rgr022c.bnn"
+nfn = r"c:\Users\jpeacock\OneDrive - DOI\MountainPass\FieldWork\LP_Data\Mnp300a\DATA.BIN"
 
 fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
 
@@ -505,8 +534,7 @@ ph5_obj.initgroup()
 
 ### initialize mt2ph5 object
 mt_obj = MTtoPH5(ph5_obj, os.path.dirname(ph5_fn), 1, 1)
-# turn on verbose logging so we can see more info
-mt_obj.verbose = True
+
 # we give it a our trace and should get a message
 # back saying done as well as an index table to be loaded
 message, index_t = mt_obj.to_ph5([nfn])
