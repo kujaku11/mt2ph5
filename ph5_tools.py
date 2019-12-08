@@ -182,6 +182,7 @@ class generic2ph5(object):
     def __init__(self):
         
         self.ph5_obj = None
+        self.mini_size_max = 26843545600
         
     @property
     def ph5_path(self):
@@ -300,14 +301,12 @@ class generic2ph5(object):
         
         return mini_ph5_obj, filename
      
-    def get_current_mini_num(self, station, first_mini=1,
-                             mini_size_max = 26843545600):
+    def get_current_mini_num(self, station, first_mini=1):
         """
         get the current mini number for the given station.
         
         :param str station: station name
         :param int first_mini: number of the first mini PH5 file
-        :param int mini_size_max: maximum size of each mini PH5 file
         
         :return: current mini number.
         
@@ -327,7 +326,7 @@ class generic2ph5(object):
                     for station in self.mini_map:
                         if station['num'] >= largest:
                             largest = station['num']
-                    if (mini['size'] < mini_size_max):
+                    if (mini['size'] < self.mini_size_max):
                         current_mini = largest
                     else:
                         current_mini = largest + 1
@@ -787,53 +786,53 @@ class generic2ph5(object):
 
 
     
-# =============================================================================
-# Tests    
-# =============================================================================
-ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5_py3\ph5\test_data\test.ph5"
-survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
-station_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\station_metadata.json"
-receiver_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\receiver_metadata.json"
-channel_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\channel_metadata.json"
-
-if os.path.exists(ph5_fn):
-    os.remove(ph5_fn)
-
-ph5_test_obj = generic2ph5()
-ph5_test_obj.open_ph5_file(ph5_fn)
-
-### first step is to add general information about the survey as metadata
-### this goes into the Experiment Group/Experiment_table
-### add Survey metadata to file
-survey_dict = load_json(survey_json)
-ph5_test_obj.add_survey_metadata(survey_dict)
-
-### How to add a station
-### A station basically makes its own mini ph5 which has its own experiment
-### group.  The Receivers group is where the metadata goes for the station.
-### The channel data will go into this group as well
-#### add station
-das_group_name, mini_ph5_obj = ph5_test_obj.add_station_mini('mt01')
-
-### How to add channel data
-### Add a channel metadata to the master ph5 receivers table
-#### add channel data
-### 1 -- add receiver to table
-receiver_dict = load_json(receiver_json)
-n_receiver = ph5_test_obj.add_reciever_to_table(receiver_dict)
-
-### Add channel specifice metadata to the master sorts group as an array that
-### is linked to the specific station.
-### 2 -- add array to sorts
-array_dict = load_json(station_json)
-array_dict['receiver_table_n_i'] = n_receiver
-new_array = ph5_test_obj.add_array_to_sorts(ph5_test_obj.ph5_obj.ph5_g_sorts.nextName(),
-                                            array_dict)
-
-### Add the data to the station ph5 into 
-### 3 -- add array data
-channel_dict = load_json(channel_json)
-t_entry = ph5_test_obj.add_channel(mini_ph5_obj, 'mt01', array_dict, 
-                                   np.random.randint(2**12, size=2**16,
-                                                     dtype=np.int32))
+## =============================================================================
+## Tests    
+## =============================================================================
+#ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\PH5_py3\ph5\test_data\test.ph5"
+#survey_json = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\survey_metadata.json"
+#station_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\station_metadata.json"
+#receiver_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\receiver_metadata.json"
+#channel_json = r"C:\Users\jpeacock\Documents\GitHub\mt2ph5\channel_metadata.json"
+#
+#if os.path.exists(ph5_fn):
+#    os.remove(ph5_fn)
+#
+#ph5_test_obj = generic2ph5()
+#ph5_test_obj.open_ph5_file(ph5_fn)
+#
+#### first step is to add general information about the survey as metadata
+#### this goes into the Experiment Group/Experiment_table
+#### add Survey metadata to file
+#survey_dict = load_json(survey_json)
+#ph5_test_obj.add_survey_metadata(survey_dict)
+#
+#### How to add a station
+#### A station basically makes its own mini ph5 which has its own experiment
+#### group.  The Receivers group is where the metadata goes for the station.
+#### The channel data will go into this group as well
+##### add station
+#das_group_name, mini_ph5_obj = ph5_test_obj.add_station_mini('mt01')
+#
+#### How to add channel data
+#### Add a channel metadata to the master ph5 receivers table
+##### add channel data
+#### 1 -- add receiver to table
+#receiver_dict = load_json(receiver_json)
+#n_receiver = ph5_test_obj.add_reciever_to_table(receiver_dict)
+#
+#### Add channel specifice metadata to the master sorts group as an array that
+#### is linked to the specific station.
+#### 2 -- add array to sorts
+#array_dict = load_json(station_json)
+#array_dict['receiver_table_n_i'] = n_receiver
+#new_array = ph5_test_obj.add_array_to_sorts(ph5_test_obj.ph5_obj.ph5_g_sorts.nextName(),
+#                                            array_dict)
+#
+#### Add the data to the station ph5 into 
+#### 3 -- add array data
+#channel_dict = load_json(channel_json)
+#t_entry = ph5_test_obj.add_channel(mini_ph5_obj, 'mt01', array_dict, 
+#                                   np.random.randint(2**12, size=2**16,
+#                                                     dtype=np.int32))
 
