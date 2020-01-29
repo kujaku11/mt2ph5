@@ -1,22 +1,20 @@
-Metadata for Data logger: Information on how the data logger was setup for a run,,,,
-Parameter,Type,Requirement,Explanation,Alias
-manufacturer_s,string,compulsory,manufacturer name,
-model_s,string,compulsory,model name,
-serial_s,string,compulsory,serial number,
-notes_s,string,compulsory,notes about data logger,
-timing_system/type_s,string,compulsory,type of timing system --> [GPS | internal | ... ],
-timing_system/drift_d,float,compulsory,any drift in internal clock,
-timing_system/uncertainty_d,float,compulsory,uncertainty associated with internal clock,
-timing_system/notes_s,string,optional,notes on timing system,
-firmware/version_s,string,compulsory,firmware version,
-firmware/date_s,string,compulsory,date on firmware,
-firmware/author_s,string,optional,author of firmware,
-n_channels_i,int,compulsory,number of channels,
-n_channels_used_s,int,compulsory,number of channels used,
-calibration/filename_s,string,compulsory,calibration file or link for data logger,
-calibration/date_s,string,compulsory,calibration date,
-calibration/notes_s,string,optional,notes on calibration,
-power_source/type_s,string,compulsory,power source type [ Pb-acid battery | solar panel | Li battery | ...],
-power_source/start_voltage_d,float,compulsory,starting voltage of power source,
-power_source/end_voltage_d,float,compulsory,ending voltage of power source,
-power_source/notes_s,string,optional,notes on power source,
+manufacturer\_s & manufacturer name & string & compulsory \\ \hline
+model\_s & model name & string & compulsory \\ \hline
+serial\_s & serial number & string & compulsory \\ \hline
+notes\_s & notes about data logger & string & compulsory \\ \hline
+timing\_system/type\_s & type of timing system --> [GPS $|$ internal $|$ ... ] & string & compulsory \\ \hline
+timing\_system/drift\_d & any drift in internal clock & float & compulsory \\ \hline
+timing\_system/uncertainty\_d & uncertainty associated with internal clock & float & compulsory \\ \hline
+timing\_system/notes\_s & notes on timing system & string & optional \\ \hline
+firmware/version\_s & firmware version & string & compulsory \\ \hline
+firmware/date\_s & date on firmware & string & compulsory \\ \hline
+firmware/author\_s & author of firmware & string & optional \\ \hline
+n\_channels\_i & number of channels & int & compulsory \\ \hline
+n\_channels\_used\_s & number of channels used & int & compulsory \\ \hline
+calibration/filename\_s & calibration file or link for data logger & string & compulsory \\ \hline
+calibration/date\_s & calibration date & string & compulsory \\ \hline
+calibration/notes\_s & notes on calibration & string & optional \\ \hline
+power\_source/type\_s & power source type [ Pb-acid battery $|$ solar panel $|$ Li battery $|$ ...] & string & compulsory \\ \hline
+power\_source/start\_voltage\_d & starting voltage of power source & float & compulsory \\ \hline
+power\_source/end\_voltage\_d & ending voltage of power source & float & compulsory \\ \hline
+power\_source/notes\_s & notes on power source & string & optional \\ \hline

@@ -1,14 +1,12 @@
-"Metadata for Run: Information on a single run, a run is one setup with one sampling rate",,,,
-Parameter,Type,Requirement,Explanation,Alias
-ID_s,string,compulsory,run ID,
-notes_s,string,optional,notes on run,
-start_time/value_s,string,compulsory,start time of data logging [ UTC ],"start_date, deploy_time, deploy_date"
-end_time/value_s,string,compulsory,stop time of data logging [ UTC ],"start_date, deploy_time, deploy_date"
-sampling_rate_d,float,compulsory,sampling rate of run (samples/second),
-num_channels_i,int,compulsory,number of channels recorded,
-channels_recorded_s,string,compulsory,"list of channels recorded [ [EX, EY, HX, HY] | ...]",
-data_type _s,string,compulsory,type of data collected [ BB | LP | AMT | Combo | ...],
-acquired_by/author_s,string,compulsory,person(s) responsible for run,name
-acquired_by/email_s,string,compulsory,email of lead run operator,
-provenance/notes_s,string,optional,any notes on the history of the data,
-provenance/log_s,string,optional,log of any changes made to time series data. (can this be automated?),
+ID\_s & run ID & string & compulsory \\ \hline
+notes\_s & notes on run & string & optional \\ \hline
+start\_time/value\_s & start time of data logging [ UTC ] & string & compulsory \\ \hline
+end\_time/value\_s & stop time of data logging [ UTC ] & string & compulsory \\ \hline
+sampling\_rate\_d & sampling rate of run (samples/second) & float & compulsory \\ \hline
+num\_channels\_i & number of channels recorded & int & compulsory \\ \hline
+channels\_recorded\_s & "list of channels recorded [ [EX, EY, HX, HY] $|$ ...]" & string & compulsory \\ \hline
+data\_type \_s & type of data collected [ BB $|$ LP $|$ AMT $|$ Combo $|$ ...] & string & compulsory \\ \hline
+acquired\_by/author\_s & person(s) responsible for run & string & compulsory \\ \hline
+acquired\_by/email\_s & email of lead run operator & string & compulsory \\ \hline
+provenance/notes\_s & any notes on the history of the data & string & optional \\ \hline
+provenance/log\_s & log of any changes made to time series data & string & optional \\ \hline
