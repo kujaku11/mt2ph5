@@ -337,10 +337,10 @@ class MTtoPH5(ph5_tools.generic2ph5):
 # Test
 # =============================================================================
 #ts_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\ts_test.EX"
-ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\test_ph5.ph5"
+ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\test_ph5.ph5"
 nfn = r"c:\Users\jpeacock\OneDrive - DOI\MountainPass\FieldWork\LP_Data\Mnp300a\DATA.BIN"
 
-fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
+#fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
 
 ### initialize a PH5 object
 ph5_obj = experiment.ExperimentGroup(nickname='test_ph5',
