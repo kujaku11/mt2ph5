@@ -142,7 +142,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         index_t_entry['end_time/micro_seconds_i'] = (ts_obj.ts.index[-1].microsecond)
         index_t_entry['end_time/type_s'] = 'BOTH'
         
-        # time stamp -- when data was entered?
+        # time stamp -- when data was entered
         time_stamp_utc = mtts.datetime.datetime.utcnow()
         index_t_entry['time_stamp/ascii_s'] = (time_stamp_utc.isoformat())
         index_t_entry['time_stamp/epoch_l'] = (int(time_stamp_utc.timestamp()))
@@ -151,10 +151,6 @@ class MTtoPH5(ph5_tools.generic2ph5):
         
         index_t_entry['serial_number_s'] = ts_obj.station
         index_t_entry['external_file_name_s'] = ''
-#        index_t_entry['component_s'] = ts_obj.component.upper()
-#        index_t_entry['dipole_length_f'] = ts_obj.dipole_length
-#        index_t_entry['dipole_length_units_s'] = 'meters'
-#        index_t_entry['sensor_id_s'] = ts_obj.chn_num
         
         return index_t_entry
     
@@ -305,50 +301,8 @@ class MTtoPH5(ph5_tools.generic2ph5):
             else:
                 index_t_entry, count = self._load_ts_to_ph5(ts_obj, count)
                 index_t.append(index_t_entry)
-                
-        #LOGGER.info('Finished processing {0}'.format(ts_obj.fn))
-
-        # last thing is to return the index table so far.
-        # index_t will be populated in main() after all
-        # files are loaded
         
         return "done", index_t
-
-#    def update_external_references(self, index_t):
-#        """
-#        looks through index_t and updates master.ph5
-#        with external references to das group in mini files
-#        :type list
-#        :param index_t:
-#        :return:
-#        """
-#        n = 0
-#        #LOGGER.info("updating external references")
-#        for i in index_t:
-#            external_file = i['external_file_name_s'][2:]
-#            external_path = i['hdf5_path_s']
-#            target = external_file + ':' + external_path
-#            external_group = external_path.split('/')[3]
-#
-#            try:
-#                group_node = self.ph5.ph5.get_node(external_path)
-#                group_node.remove()
-#
-#            except Exception as e:
-#                print(e)
-#                pass
-#
-#            #   Re-create node
-#            try:
-#                self.ph5.ph5.create_external_link(
-#                    '/Experiment_g/Receivers_g', external_group, target)
-#                n += 1
-#            except Exception as e:
-#                # pass
-#                print(e)
-#                #LOGGER.error(e.message)
-#
-#        return
 
 # =============================================================================
 # Test
@@ -368,8 +322,7 @@ ph5_obj.initgroup()
 ### initialize mt2ph5 object
 mt_obj = MTtoPH5()
 mt_obj.ph5_obj = ph5_obj
-# turn on verbose logging so we can see more info
-mt_obj.verbose = True
+
 # we give it a our trace and should get a message
 # back saying done as well as an index table to be loaded
 message, index_t = mt_obj.to_ph5([nfn])
