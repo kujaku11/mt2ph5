@@ -1,39 +1,39 @@
-Metadata for Electric Field: Information on how an electric field measurement was setup for a run                                ,,,,
-Parameter,Type,Requirement,Explanation,Alias
-sensor/type_s,string,compulsory,type of electric sensor [ Ag-AgCl | Pb-PbCl | ...],
-sensor/manufacturer_s,string,compulsory,electric sensor manufacturer,
-sensor/notes_s,string,optional,notes on electric sensor,
-dipole/length_d,float,compulsory,length of dipole [ m ],
-channel_num_i,int,compulsory,channel number [ 1 | 2 | 3 | 4 | 5 | 6 |...],
-component_s,string ,compulsory,[ Ex | Ey | Ez ],
-azimuth/value_d,float,compulsory,"azimuth of dipole N = 0, E = 90 [ degrees ]",
-positive/ID_s,string,compulsory,sensor id number,
-positive/latitude_d,float,optional,positive sensor location latitude [ degrees (hh.mmss) ],
-positive/longitude_d,float,optional,positive sensor location longitude [ degrees (hh.mmss) ],
-positive/elevation_d,float,optional,positive sensor location elevation [ m ],
-positive/datum_s,string,optional,"positive datum for x, y, z location [ WGS84 ]",
-negative/ID_s,string,compulsory,sensor id number,
-negative/longitude_d,float,optional,negative sensor location latitude [ degrees (hh.mmss) ],
-negative/latitude_d,float,optional,negative sensor location longitude [ degrees (hh.mmss) ],
-negative/elevation_d,float,optional,negative sensor location elevation [ m ],
-negative/datum_s,string,optional,"negative datum for x, y, z location [ WGS84 ]",
-contact_resistance/start_A_d,float,compulsory,"contact resistance at beginning of measurement, positive polarity [ Ohm ]",
-contact_resistance/start_B_d,float,compulsory,"contact resistance at beginning of measurement, negative polarity [ Ohm ]",
-contact_resistance/end_A_d,float,compulsory,"contact resistance at end of measurement, positive polarity [ Ohm ]",
-contact_resistance/end_B_d,float,compulsory,"contact resistance at end of measurement, negative polarity [ Ohm ]",
-ac/start_d,float,compulsory,AC at start of measurement [ V ],
-ac/end_d,float,compulsory,AC at end of measurement [ V ],
-dc/start_d,float,compulsory,DC at start of measurement [ V ],
-dc/end_d,float,compulsory,DC at end of measurement [ V ],
-gain_d,float,optional,gain on electric channel,
-calibration_s,string,optional,statement on how calibration for sensor was performed,
-units_s,string,,units of electric field data [ counts | mV | ... ],
-sample_rate_d,float,compulsory,sample rate of electric channel (samples/second),
-notes_s,string,,notes about electric field measurement,
-data_quality/rating_d,float,,data quality rating based on some sort of statistic,
-data_quality/warning_comments_s,string,,"any warnings about data quality (ie. noise sources, chewed cables, ...)",
-data_quality/warning_flags_s,float,,a value flagging bad data ,
-data_quality/author_s,string,,person who did QC/QA on data,
-filter/type_s,string,,any type of filter used durring recording,
-filter/parameters_s,string,,filter parameters,
-filter/notes_s,string,,any notes on the filtering,
+Metadata for Electric Field: Information on how an electric field measurement was setup for a run                                ,,,
+Parameter,Explanation,Type,Requirement
+sensor/type_s,type of electric sensor [ Ag-AgCl | Pb-PbCl | ...],string,compulsory
+sensor/manufacturer_s,electric sensor manufacturer,string,compulsory
+sensor/notes_s,notes on electric sensor,string,optional
+dipole/length_d,length of dipole [ m ],float,compulsory
+channel_num_i,channel number [ 1 | 2 | 3 | 4 | 5 | 6 |...],int,compulsory
+component_s,[ Ex | Ey | Ez ],string ,compulsory
+azimuth/value_d,"azimuth of dipole N = 0, E = 90 [ degrees ]",float,compulsory
+positive/ID_s,sensor id number,string,compulsory
+positive/latitude_d,positive sensor location latitude [ degrees (hh.mmss) ],float,optional
+positive/longitude_d,positive sensor location longitude [ degrees (hh.mmss) ],float,optional
+positive/elevation_d,positive sensor location elevation [ m ],float,optional
+positive/datum_s,"positive datum for x, y, z location [ WGS84 ]",string,optional
+negative/ID_s,sensor id number,string,compulsory
+negative/longitude_d,negative sensor location latitude [ degrees (hh.mmss) ],float,optional
+negative/latitude_d,negative sensor location longitude [ degrees (hh.mmss) ],float,optional
+negative/elevation_d,negative sensor location elevation [ m ],float,optional
+negative/datum_s,"negative datum for x, y, z location [ WGS84 ]",string,optional
+contact_resistance/start_A_d,"contact resistance at beginning of measurement, positive polarity [ Ohm ]",float,compulsory
+contact_resistance/start_B_d,"contact resistance at beginning of measurement, negative polarity [ Ohm ]",float,compulsory
+contact_resistance/end_A_d,"contact resistance at end of measurement, positive polarity [ Ohm ]",float,compulsory
+contact_resistance/end_B_d,"contact resistance at end of measurement, negative polarity [ Ohm ]",float,compulsory
+ac/start_d,AC at start of measurement [ V ],float,compulsory
+ac/end_d,AC at end of measurement [ V ],float,compulsory
+dc/start_d,DC at start of measurement [ V ],float,compulsory
+dc/end_d,DC at end of measurement [ V ],float,compulsory
+gain_d,gain on electric channel,float,optional
+calibration_s,statement on how calibration for sensor was performed,string,optional
+units_s,units of electric field data [ counts | mV | ... ],string,
+sample_rate_d,sample rate of electric channel (samples/second),float,compulsory
+notes_s,notes about electric field measurement,string,
+data_quality/rating_d,data quality rating based on some sort of statistic,float,
+data_quality/warning_comments_s,"any warnings about data quality (ie. noise sources, chewed cables, ...)",string,
+data_quality/warning_flags_s,a value flagging bad data ,float,
+data_quality/author_s,person who did QC/QA on data,string,
+filter/type_s,any type of filter used durring recording,string,
+filter/parameters_s,filter parameters,string,
+filter/notes_s,any notes on the filtering,string,

@@ -20,11 +20,13 @@ import ph5_tools
 from ph5.core import experiment
 from mtpy.core import ts as mtts
 from mtpy.usgs import zen
-from usgs_archive import nims
+from mtpy.usgs import nims
+### inheret ph5_tools.generic to_ph5
+#from mt2ph5 import ph5_tools
 
 
 PROG_VERSION = '2019.65'
-LOGGER = logging.getLogger(__name__)
+#LOGGER = logging.getLogger(__name__)
 
 # =============================================================================
 # Class
@@ -199,6 +201,15 @@ class MTtoPH5(ph5_tools.generic2ph5):
         
         return das
     
+    def make_array_entry(self, ts_obj):
+        """
+        Make an array entry that will go into the sorts group of the main 
+        Experiment object.
+        
+        
+        """
+        pass
+    
     def load_ts_obj(self, ts_fn):
         """
         load an MT file
@@ -206,19 +217,23 @@ class MTtoPH5(ph5_tools.generic2ph5):
         if isinstance(ts_fn, str):
             ext = os.path.splitext(ts_fn)[-1][1:].lower()
             if ext == 'z3d':
+                self.logger.info('Opening Z3D file {0}'.format(ts_fn))
                 z3d_obj = zen.Zen3D(ts_fn)
                 z3d_obj.read_z3d()
                 ts_obj = z3d_obj.ts_obj
             elif ext in ['ex', 'ey', 'hx', 'hy', 'hz']:
+                self.logger.info('Opening ascii file {0}'.format(ts_fn))
                 ts_obj = mtts.MTTS()
                 ts_obj.read_file(ts_fn)
-            elif ext == 'bnn':
+            elif ext in  ['bnn', 'bin']:
+                self.logger.info('Opening NIMS file {0}'.format(ts_fn))
                 nims_obj = nims.NIMS(ts_fn)
                 ts_obj = [nims_obj.hx, nims_obj.hy, nims_obj.hz, nims_obj.ex, 
                           nims_obj.ey]
                 
         elif isinstance(ts_fn, mtts.MTTS):
             ts_obj = ts_fn
+            self.logger.info('Loading MT object')
         else:
             raise mtts.MTTSError("Do not understand {0}".format(type(ts_fn)))
             
@@ -277,6 +292,9 @@ class MTtoPH5(ph5_tools.generic2ph5):
         # Don't forget to close minifile
         mini_handle.ph5close()
         
+        self.logger.info('Loaded {0} to mini file {1}'.format(ts_obj.fn, 
+                         mini_name))
+        
         return index_t_entry, count
         
 
@@ -308,10 +326,10 @@ class MTtoPH5(ph5_tools.generic2ph5):
 # Test
 # =============================================================================
 #ts_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\ts_test.EX"
-ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\test_ph5.ph5"
-nfn = r"c:\Users\jpeacock\Downloads\data_rgr022c.bnn"
+ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\test_ph5.ph5"
+nfn = r"c:\Users\jpeacock\OneDrive - DOI\MountainPass\FieldWork\LP_Data\Mnp300a\DATA.BIN"
 
-fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
+#fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
 
 ### initialize a PH5 object
 ph5_obj = experiment.ExperimentGroup(nickname='test_ph5',
@@ -335,8 +353,6 @@ message, index_t = mt_obj.to_ph5([nfn])
 for entry in index_t:
     ph5_obj.ph5_g_receivers.populateIndex_t(entry)
     mt_obj.update_external_reference(entry)
-
-
 
 # be nice and close the file
 ph5_obj.ph5close()
