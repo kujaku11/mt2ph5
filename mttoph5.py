@@ -26,7 +26,7 @@ from mtpy.usgs import nims
 
 
 PROG_VERSION = '2019.65'
-#LOGGER = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Class
@@ -121,6 +121,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         super().__init__()
         self.num_mini = num_mini
         self.first_mini = first_mini
+        self.logger = logging.getLogger('MTtoPH5')
         
         self.time_t = list()
         
@@ -178,28 +179,28 @@ class MTtoPH5(ph5_tools.generic2ph5):
         :param ts_obj: MTTS object
         :return: dictionary of das information
         """
-        das = {}
+        das_entry = {}
         # start time information
-        das['time/ascii_s'] = ts_obj.start_time_utc
-        das['time/epoch_l'] = int(ts_obj.start_time_epoch_sec)
-        das['time/micro_seconds_i'] = ts_obj.ts.index[0].microsecond
-        das['time/type_s'] = 'BOTH'
+        das_entry['time/ascii_s'] = ts_obj.start_time_utc
+        das_entry['time/epoch_l'] = int(ts_obj.start_time_epoch_sec)
+        das_entry['time/micro_seconds_i'] = ts_obj.ts.index[0].microsecond
+        das_entry['time/type_s'] = 'BOTH'
         
-        das['sample_rate_i'] = ts_obj.sampling_rate
-        das['sample_rate_multiplier_i'] = 1
+        das_entry['sample_rate_i'] = ts_obj.sampling_rate
+        das_entry['sample_rate_multiplier_i'] = 1
         
-        das['channel_number_i'] = ts_obj.chn_num
-        das['sample_count_i'] = ts_obj.n_samples
-        das['raw_file_name_s'] = ts_obj.fn
-#        das['component_s'] = ts_obj.component.upper()
-#        das['dipole_length_f'] = ts_obj.dipole_length
-#        das['dipole_length_units_s'] = 'meters'
-#        das['sensor_id_s'] = ts_obj.chn_num
-#        das['array_name_data_a'] = '{0}_{1}_{2}'.format('Data',
+        das_entry['channel_number_i'] = ts_obj.chn_num
+        das_entry['sample_count_i'] = ts_obj.n_samples
+        das_entry['raw_file_name_s'] = ts_obj.fn
+#        das_entry['component_s'] = ts_obj.component.upper()
+#        das_entry['dipole_length_f'] = ts_obj.dipole_length
+#        das_entry['dipole_length_units_s'] = 'meters'
+#        das_entry['sensor_id_s'] = ts_obj.chn_num
+#        das_entry['array_name_data_a'] = '{0}_{1}_{2}'.format('Data',
 #                                                        ts_obj.component,
 #                                                        '1')
         
-        return das
+        return das_entry
     
     def make_array_entry(self, ts_obj):
         """
@@ -239,7 +240,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
             
         return ts_obj
     
-    def _load_ts_to_ph5(self, ts_obj, count=1):
+    def single_ts_to_ph5(self, ts_obj, count=1):
         """
         load a single time series into ph5
         """
@@ -313,11 +314,11 @@ class MTtoPH5(ph5_tools.generic2ph5):
             ts_obj = self.load_ts_obj(fn)
             if isinstance(ts_obj, list):
                 for single_ts_obj in ts_obj:
-                    index_t_entry, count = self._load_ts_to_ph5(single_ts_obj, 
+                    index_t_entry, count = self.single_ts_to_ph5(single_ts_obj, 
                                                                 count)
                     index_t.append(index_t_entry)
             else:
-                index_t_entry, count = self._load_ts_to_ph5(ts_obj, count)
+                index_t_entry, count = self.single_ts_to_ph5(ts_obj, count)
                 index_t.append(index_t_entry)
         
         return "done", index_t
@@ -326,7 +327,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
 # Test
 # =============================================================================
 #ts_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\ts_test.EX"
-ph5_fn = r"c:\Users\jpeacock\Documents\GitHub\mt2ph5\test_ph5.ph5"
+ph5_fn = r"c:\Users\jpeacock\Documents\test_ph5.ph5"
 nfn = r"c:\Users\jpeacock\OneDrive - DOI\MountainPass\FieldWork\LP_Data\Mnp300a\DATA.BIN"
 
 #fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
