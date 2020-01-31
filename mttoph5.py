@@ -169,6 +169,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         receiver_t_entry['orientation/dip/units_s'] = 'degrees'
         receiver_t_entry['orientation/description_s'] = ts_obj.component
         receiver_t_entry['orientation/channel_number_i'] = ts_obj.chn_num
+        receiver_t_entry['orientation/location/length'] = ts_obj.dipole_length
         
         return receiver_t_entry
         
@@ -240,6 +241,17 @@ class MTtoPH5(ph5_tools.generic2ph5):
             
         return ts_obj
     
+    def get_current_das(self, ph5_object, station):
+        """
+        get the current DAS table from a PH5 object
+        """
+        # get node reference or create new node
+        station_das_table = ph5_object.ph5_g_receivers.getdas_g(station)
+        if not station_das_table:
+            station_das_table, t, r, ti = ph5_object.ph5_g_receivers.newdas(station)
+            
+        return station_das_table
+    
     def single_ts_to_ph5(self, ts_obj, count=1):
         """
         load a single time series into ph5
@@ -250,17 +262,18 @@ class MTtoPH5(ph5_tools.generic2ph5):
         receiver_t_entry = self.make_receiver_t_entry(ts_obj)
         
         ### add receiver entry number
-        das_t_entry['receiver_table_n_i'] = count
+        das_t_entry['receiver_table_n_i'] = self.get_receiver_n(ts_obj.station,
+                                                                ts_obj.sampling_rate,
+                                                                ts_obj.channel_number)
         das_t_entry['response_table_n_i'] = count
         
         ### get the current mini file
         current_mini = self.get_current_mini_num(ts_obj.station)
         mini_handle, mini_name = self.open_mini(current_mini)
         
-        # get node reference or create new node
-        d = mini_handle.ph5_g_receivers.getdas_g(ts_obj.station)
-        if not d:
-            d, t, r, ti = mini_handle.ph5_g_receivers.newdas(ts_obj.station)
+        current_das_table_mini = self.get_current_das(mini_handle,
+                                                      ts_obj.station)
+        mini_handle.ph5_g_receivers.setcurrent(current_das_table_mini)
         
         ### make name for array data going into mini file
         while True:
@@ -273,7 +286,6 @@ class MTtoPH5(ph5_tools.generic2ph5):
             continue
         
         ### make a new array
-        mini_handle.ph5_g_receivers.setcurrent(d)
         mini_handle.ph5_g_receivers.newarray(das_t_entry['array_name_data_a'],
                                              ts_obj.ts.data,
                                              dtype=ts_obj.ts.data.dtype,
@@ -284,10 +296,17 @@ class MTtoPH5(ph5_tools.generic2ph5):
         das_path = "/Experiment_g/Receivers_g/Das_g_{0}".format(ts_obj.station)
         index_t_entry['hdf5_path_s'] = das_path
         
-        ### populate metadata tables
+        ### populate metadata tables 
+        ### DAS goes in both mini and main
         mini_handle.ph5_g_receivers.populateDas_t(das_t_entry)
-        mini_handle.ph5_g_receivers.populateIndex_t(index_t_entry)
-        mini_handle.ph5_g_receivers.populateReceiver_t(receiver_t_entry)
+        
+        current_das_table_main = self.get_current_das(self.ph5_obj, 
+                                                      ts_obj.station)
+        self.ph5_obj.ph5_g_receivers.setcurrent(current_das_table_main)
+        self.ph5_obj.ph5_g_receivers.populateDas_t(das_t_entry)
+        ### index and receivers goes in main
+        self.ph5_obj.ph5_g_receivers.populateIndex_t(index_t_entry)
+        self.ph5_obj.ph5_g_receivers.populateReceiver_t(receiver_t_entry)
         #mini_handle.ph5_g_receivers.populateTime_t_()
 
         # Don't forget to close minifile
@@ -331,6 +350,9 @@ ph5_fn = r"c:\Users\jpeacock\Documents\test_ph5.ph5"
 nfn = r"c:\Users\jpeacock\OneDrive - DOI\MountainPass\FieldWork\LP_Data\Mnp300a\DATA.BIN"
 
 #fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
+
+if os.path.exists(ph5_fn):
+    os.remove(ph5_fn)
 
 ### initialize a PH5 object
 ph5_obj = experiment.ExperimentGroup(nickname='test_ph5',

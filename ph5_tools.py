@@ -764,24 +764,24 @@ class generic2ph5(object):
         get receiver table index for given station, given channel
         """
         # figure out receiver and response n_i
-        for array_entry in self.get_arrays():
+        for count, array_entry in enumerate(self.get_arrays(), 1):
             if (array_entry['sample_rate_i'] == sample_rate and
                 array_entry['channel_number_i'] == channel_number and
                 array_entry['id_s'] == station):
                 return array_entry['receiver_table_n_i']
-        return 0
+        return count
     
     def get_response_n(self, station, sample_rate, channel_number):
         """
         get receiver table index for given station, given channel
         """
         # figure out receiver and response n_i
-        for array_entry in self.get_arrays():
+        for count, array_entry in enumerate(self.get_arrays(), 1):
             if (array_entry['sample_rate_i'] == sample_rate and
                 array_entry['channel_number_i'] == channel_number and
                 array_entry['id_s'] == station):
                 return array_entry['response_table_n_i']
-        return 0
+        return count
 
 
 
