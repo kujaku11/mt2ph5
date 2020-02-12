@@ -401,6 +401,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         load a single time series into ph5
         """
         ts_obj.data_logger = ts_obj.data_logger.replace('-', '_')
+        ts_obj.sampling_rate = int(ts_obj.sampling_rate)
         ### start populating das table and data arrays
         index_t_entry = self.make_index_t_entry(ts_obj)
         das_t_entry = self.make_das_entry(ts_obj)
