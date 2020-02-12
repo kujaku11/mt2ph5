@@ -13,11 +13,8 @@ June-2019
 # =============================================================================
 import logging
 import os
-import re
-import glob
-#import pathlib
 import ph5_tools
-from ph5.core import experiment, columns
+from ph5.core import columns
 from mtpy.core import ts as mtts
 from mtpy.usgs import zen
 from mtpy.usgs import nims
@@ -311,7 +308,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         
         return array_entry
     
-    def make_sort_entry(ts_obj):
+    def make_sorts_entry(self, ts_obj):
         """
         Make a sorts entry
         
@@ -337,6 +334,27 @@ class MTtoPH5(ph5_tools.generic2ph5):
                type_s [string 8] - Epoch, UTC, Both
         """
         
+        sorts_entry = {}
+        sorts_entry['event_id_s'] = ''
+        sorts_entry['array_name_s'] = '001'
+        sorts_entry['array_t_name_s'] = 'Array_t_001'
+        sorts_entry['description_s'] = 'Magnetotelluric array'
+        sorts_entry['start_time/ascii_s'] = ts_obj.start_time_utc
+        sorts_entry['start_time/epoch_l'] = int(ts_obj.start_time_epoch_sec)
+        sorts_entry['start_time/micro_seconds_i'] = ts_obj.ts.index[0].microsecond
+        sorts_entry['start_time/type_s'] = 'BOTH'
+        sorts_entry['end_time/ascii_s'] = (ts_obj.stop_time_utc)
+        sorts_entry['end_time/epoch_l'] = (int(ts_obj.stop_time_epoch_sec))
+        sorts_entry['end_time/micro_seconds_i'] = (ts_obj.ts.index[-1].microsecond)
+        sorts_entry['end_time/type_s'] = 'BOTH'
+
+        time_stamp_utc = mtts.datetime.datetime.utcnow()
+        sorts_entry['time_stamp/ascii_s'] = (time_stamp_utc.isoformat())
+        sorts_entry['time_stamp/epoch_l'] = (int(time_stamp_utc.timestamp()))
+        sorts_entry['time_stamp/micro_seconds_i'] = (time_stamp_utc.microsecond)
+        sorts_entry['time_stamp/type_s'] = 'BOTH'
+        
+        return sorts_entry
     
     def load_ts_obj(self, ts_fn):
         """
@@ -382,11 +400,13 @@ class MTtoPH5(ph5_tools.generic2ph5):
         """
         load a single time series into ph5
         """
+        ts_obj.data_logger = ts_obj.data_logger.replace('-', '_')
         ### start populating das table and data arrays
         index_t_entry = self.make_index_t_entry(ts_obj)
         das_t_entry = self.make_das_entry(ts_obj)
         receiver_t_entry = self.make_receiver_t_entry(ts_obj)
         array_t_entry = self.make_array_entry(ts_obj)
+        sorts_t_entry = self.make_sorts_entry(ts_obj)
         
         ### add receiver entry number
         das_t_entry['receiver_table_n_i'] = self.get_receiver_n(ts_obj.station,
@@ -436,6 +456,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         self.ph5_obj.ph5_g_receivers.populateReceiver_t(receiver_t_entry)
         #mini_handle.ph5_g_receivers.populateTime_t_()
         columns.populate(self.array_table, array_t_entry)
+        self.ph5_obj.ph5_g_sorts.populateSort_t(sorts_t_entry)
 
         # Don't forget to close minifile
         mini_handle.ph5close()
@@ -468,46 +489,4 @@ class MTtoPH5(ph5_tools.generic2ph5):
         
         return "done"
 
-# =============================================================================
-# Test
-# =============================================================================
-#ts_fn = r"c:\Users\jpeacock\Documents\GitHub\sandbox\ts_test.EX"
-ph5_fn = r"c:\Users\jpeacock\Documents\test_ph5.ph5"
-nfn = r"c:\Users\jpeacock\OneDrive - DOI\MountainPass\FieldWork\LP_Data\Mnp300a\DATA.BIN"
 
-#fn_list = glob.glob(r"c:\Users\jpeacock\Documents\imush\O015\*.Z3D")
-
-if os.path.exists(ph5_fn):
-    try:
-        os.remove(ph5_fn)
-    except PermissionError:
-        ph5_obj = experiment.ExperimentGroup(nickname='test_ph5',
-                                     currentpath=os.path.dirname(ph5_fn))
-        ph5_obj.ph5open(True)
-        ph5_obj.ph5close()
-
-### initialize a PH5 object
-ph5_obj = experiment.ExperimentGroup(nickname='test_ph5',
-                                     currentpath=os.path.dirname(ph5_fn))
-ph5_obj.ph5open(True)
-ph5_obj.initgroup()
-
-### initialize mt2ph5 object
-mt_obj = MTtoPH5()
-mt_obj.ph5_obj = ph5_obj
-
-# we give it a our trace and should get a message
-# back saying done as well as an index table to be loaded
-message = mt_obj.to_ph5([nfn])
-
-# now load are index table
-# the last thing we need ot do ater loading
-# all our data is to update external refeerences
-# this takes all the mini files and adds their
-# references to the master so we can find the data
-# for entry in index_t:
-#     ph5_obj.ph5_g_receivers.populateIndex_t(entry)
-#     mt_obj.update_external_reference(entry)
-
-# be nice and close the file
-ph5_obj.ph5close()
