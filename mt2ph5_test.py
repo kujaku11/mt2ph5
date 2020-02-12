@@ -42,7 +42,7 @@ mt_obj.ph5_obj = ph5_obj
 
 # we give it a our trace and should get a message
 # back saying done as well as an index table to be loaded
-message = mt_obj.to_ph5(fn_list)
+message = mt_obj.to_ph5(fn_list[0:10])
 
 # be nice and close the file
 ph5_obj.ph5close()

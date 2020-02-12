@@ -155,7 +155,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         
         return index_t_entry
     
-    def make_receiver_t_entry(self, ts_obj):
+    def make_receiver_entry(self, ts_obj):
         """
         make receiver table entry
         """
@@ -273,9 +273,7 @@ class MTtoPH5(ph5_tools.generic2ph5):
         array_entry['seed_station_name_s'] = ''
         array_entry['sample_rate_i'] = ts_obj.sampling_rate
         array_entry['sample_rate_multiplier_i'] = 1
-        array_entry['receiver_table_n_i'] = self.get_receiver_n(ts_obj.station,
-                                                                ts_obj.sampling_rate,
-                                                                ts_obj.channel_number)
+        #array_entry['receiver_table_n_i'] = self.get_receiver_n(self.make_receiver_entry(ts_obj))
         array_entry['response_table_n_i'] = self.get_response_n(ts_obj.station,
                                                                 ts_obj.sampling_rate,
                                                                 ts_obj.channel_number)
@@ -405,15 +403,16 @@ class MTtoPH5(ph5_tools.generic2ph5):
         ### start populating das table and data arrays
         index_t_entry = self.make_index_t_entry(ts_obj)
         das_t_entry = self.make_das_entry(ts_obj)
-        receiver_t_entry = self.make_receiver_t_entry(ts_obj)
+        receiver_t_entry = self.make_receiver_entry(ts_obj)
         array_t_entry = self.make_array_entry(ts_obj)
         sorts_t_entry = self.make_sorts_entry(ts_obj)
         
+        receiver_exists, receiver_count = self.get_receiver_n(receiver_t_entry)
+        
         ### add receiver entry number
-        das_t_entry['receiver_table_n_i'] = self.get_receiver_n(ts_obj.station,
-                                                                ts_obj.sampling_rate,
-                                                                ts_obj.channel_number)
+        das_t_entry['receiver_table_n_i'] = receiver_count
         das_t_entry['response_table_n_i'] = count
+        array_t_entry['receiver_table_n_i'] = receiver_count
         
         ### get the current mini file
         current_mini = self.get_current_mini_num(ts_obj.data_logger)
@@ -454,7 +453,8 @@ class MTtoPH5(ph5_tools.generic2ph5):
         self.ph5_obj.ph5_g_receivers.populateDas_t(das_t_entry)
         ### index and receivers goes in main
         self.ph5_obj.ph5_g_receivers.populateIndex_t(index_t_entry)
-        self.ph5_obj.ph5_g_receivers.populateReceiver_t(receiver_t_entry)
+        if not receiver_exists:
+            self.ph5_obj.ph5_g_receivers.populateReceiver_t(receiver_t_entry)
         #mini_handle.ph5_g_receivers.populateTime_t_()
         columns.populate(self.array_table, array_t_entry)
         self.ph5_obj.ph5_g_sorts.populateSort_t(sorts_t_entry)

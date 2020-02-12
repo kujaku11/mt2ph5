@@ -233,6 +233,21 @@ class generic2ph5(object):
                 
         return arrays
     
+    def get_receivers(self):
+        """
+        get receivers entrys
+        """
+        receivers = []
+        receiver_list, null = self.ph5_obj.ph5_g_receivers.read_receiver()
+        for entry in receiver_list:
+            entry = {key.decode() if isinstance(key, bytes) else key:
+                     val.decode() if isinstance(val, bytes) else val
+                     for key, val in entry.items()}
+            receivers.append(entry)
+                
+        return receivers
+        
+    
     @property
     def das_station_map(self):
         """
@@ -759,17 +774,15 @@ class generic2ph5(object):
             print(error)
             print('x'*10)
         
-    def get_receiver_n(self, station, sample_rate, channel_number):
+    def get_receiver_n(self, receiver_entry):
         """
         get receiver table index for given station, given channel
         """
-        # figure out receiver and response n_i
-        for count, array_entry in enumerate(self.get_arrays(), 1):
-            if (array_entry['sample_rate_i'] == sample_rate and
-                array_entry['channel_number_i'] == channel_number and
-                array_entry['id_s'] == station):
-                return array_entry['receiver_table_n_i']
-        return len(self.get_arrays())
+        # figure out receiver
+        for count, entry in enumerate(self.get_receivers(), 1):
+            if entry == receiver_entry:
+                return True, count
+        return False, len(self.get_receivers()) + 1
     
     def get_response_n(self, station, sample_rate, channel_number):
         """
