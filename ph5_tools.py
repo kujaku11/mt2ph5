@@ -769,7 +769,7 @@ class generic2ph5(object):
                 array_entry['channel_number_i'] == channel_number and
                 array_entry['id_s'] == station):
                 return array_entry['receiver_table_n_i']
-        return count
+        return len(self.get_arrays())
     
     def get_response_n(self, station, sample_rate, channel_number):
         """
@@ -781,7 +781,7 @@ class generic2ph5(object):
                 array_entry['channel_number_i'] == channel_number and
                 array_entry['id_s'] == station):
                 return array_entry['response_table_n_i']
-        return count
+        return len(self.get_arrays())
 
 
 
@@ -835,4 +835,83 @@ class generic2ph5(object):
 #t_entry = ph5_test_obj.add_channel(mini_ph5_obj, 'mt01', array_dict, 
 #                                   np.random.randint(2**12, size=2**16,
 #                                                     dtype=np.int32))
+def get_seed_band_code(sampling_rate):
+    """
+    get the seed band code based on sampling rate
+    F	…	≥ 1000 to < 5000	≥ 10 sec
+    G	…	≥ 1000 to < 5000	< 10 sec
+    D	…	≥ 250 to < 1000	< 10 sec
+    C	…	≥ 250 to < 1000	≥ 10 sec
+    E	Extremely Short Period	≥ 80 to < 250	< 10 sec
+    S	Short Period	≥ 10 to < 80	< 10 sec
+    H	High Broad Band	≥ 80 to < 250	≥ 10 sec
+    B	Broad Band	≥ 10 to < 80	≥ 10 sec
+    M	Mid Period	> 1 to < 10	
+    L	Long Period	≈ 1	
+    V	Very Long Period	≈ 0.1	
+    U	Ultra Long Period	≈ 0.01	
+    R	Extremely Long Period	≥ 0.0001 to < 0.001	
+    P	On the order of 0.1 to 1 day 1	≥ 0.00001 to < 0.0001	
+    T	On the order of 1 to 10 days 1	≥ 0.000001 to < 0.00001	
+    Q	Greater than 10 days 1	< 0.000001	
+    A	Administrative Instrument Channel	variable	NA
+    O	Opaque Instrument Channel	variable	NA
+    """
+    code = 'A'
+    if sampling_rate >= 1000 and sampling_rate < 5000:
+        code = 'F'
+    elif sampling_rate >= 250 and sampling_rate < 1000:
+        code = 'D'
+    elif sampling_rate >= 80 and sampling_rate < 250:
+        code = 'E'
+    elif sampling_rate >= 10 and sampling_rate < 80:
+        code = 'B'
+    elif sampling_rate > 1 and sampling_rate < 10:
+        code = 'M'
+    elif sampling_rate == 1:
+        code = 'L'
+    elif sampling_rate == 0.1:
+        code = 'V'
+    elif sampling_rate == 0.01:
+        code = 'U'
+    elif sampling_rate >= 0.0001 and sampling_rate < 0.001:
+        code = 'R'
+    elif sampling_rate >= 0.00001 and sampling_rate < 0.0001:
+        code = 'P'
+    elif sampling_rate >= 0.000001 and sampling_rate < 0.00001:
+        code = 'T'
+    elif sampling_rate < .000001:
+        code = 'Q'
+        
+    return code
+    
+def get_seed_instrument_code(component):
+    """
+    seed instrument code
+    """
+    code = 'N'
+    if 'e' in component.lower():
+        code =  'Q'
+    elif 'h' in component.lower():
+        code = 'F'
+    return code
+
+def get_seed_orientation_code(component):
+    """
+    seed orientation code
+    
+    Z N E	Traditional (Vertical, North-South, East-West)
+    1 2 3	Orthogonal components but non traditional orientations
+    """
+    code = None
+    if component.lower() in ['ex', 'hx']:
+        code = '1'
+    elif component.lower() in ['ey', 'hy']:
+        code = '2'
+    elif component.lower() in ['hz']:
+        code = 'Z'
+    return code
+            
+    
+        
 
