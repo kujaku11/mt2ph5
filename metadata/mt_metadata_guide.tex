@@ -23,9 +23,9 @@
 
 \section{Introduction}
 
-The magnetotelluric community is relatively small which has led to various formats for storing the time series data.  Some type of ASCII format seems to be the most prevalent because before large data sets that was the easiest method of storage. Various binary formats exist, some proprietary and some open like the Scripps format, though efficient, these files lack some critical metadata.  Metadata is key to archiving data and as of now there has been no documentation on metadata standards for MT time series data.  
+The magnetotelluric community is relatively small which has led to various formats for storing and using time series data.  Some type of ASCII format seems to be the most prevalent because before large data sets that was the easiest method of storage. Various binary formats exist, some proprietary and some open like the Scripps format, though efficient, these files lack some critical metadata.  Metadata is key to archiving data and as of now there has been no documentation on metadata standards for MT time series data.  
 
-IRIS-PASSCAL is adding MT capabilities to their instrument pool and has setup a committee to develop MT metadata standards for archiving time series.  What follows are the metadata standards developed by that committee.
+IRIS-PASSCAL is adding MT capabilities to their instrument pool and has setup a committee to develop MT metadata standards for archiving time series.  What follows are the metadata standards developed by that committee.  These metadata standards will be the basis for an HDF5 based MT file for storing and manipulating time series data.
 
 
 \section{General Structure}
@@ -138,7 +138,7 @@ A survey describes an entire MT survey that covers a specific study area.  This 
 A station is a single location where MT data are collected, if the location of the station is moved during a run, then a new station should be created.  The station metadata includes information about name, location, number of channels, who acquired the data, and what is the provenance of the data.
 
 \begin{table}[htb!]
-	\caption[Attributes for Survey]{Attributes for Survey category}
+	\caption[Attributes for Station]{Attributes for Station category}
 	\begin{tabular}{|l|p{3in}|l|l|}
 		\hline
 		\textbf{Metadata Key} & \textbf{Description} & \textbf{Type} & \textbf{Required} \\ \hline
@@ -169,7 +169,7 @@ A station is a single location where MT data are collected, if the location of t
 
 \newpage
 \begin{table}[htb!]
-	\caption[Attributes for Survey]{Attributes for Survey category continued}
+	\caption[Attributes for Survey]{Attributes for Station category continued}
 	\begin{tabular}{|l|p{3in}|l|l|}
 		\hline
 		\textbf{Metadata Key} & \textbf{Description} & \textbf{Type} & \textbf{Required} \\ \hline	
@@ -177,14 +177,15 @@ A station is a single location where MT data are collected, if the location of t
 		provenance/software/name\_s & name of software used to store time series & string & compulsory \\ \hline
 		provenance/software/version\_s & version of software used to store time series & string & compulsory \\ \hline
 		provenance/software/author\_s & author of software used to store time series & string & compulsory \\ \hline
+		provenance/archive\_url & URL of where the data file was archived & string & optional \\ \hline
 		provenance/creator/author\_s & name of person or group creating archive data & string & compulsory \\ \hline
 		provenance/creator/organization\_s & name of organization or institution creating archive data & string & compulsory \\ \hline
 		provenance/creator/url\_s & url of group creating archive data & string & compulsory \\ \hline
 		provenance/creator/email\_s & email of person or group creating archive data & string & compulsory \\ \hline
 		provenance/submitter/author\_s & name of person or group submitting archive data & string & compulsory \\ \hline
-		provenance/submitter/organization\_s & name of organization or institution submitting archive data & string & compulsory \\ \hline
-		provenance/submitter/url\_s & url of group submitting archive data & string & compulsory \\ \hline
-		provenance/submitter/email\_s & email of person or group submitting archive data & string & compulsory  \\ \hline
+		provenance/submitter/organization\_s & name of organization or institution submitting archive data & string & optional \\ \hline
+		provenance/submitter/url\_s & url of group submitting archive data & string & optional \\ \hline
+		provenance/submitter/email\_s & email of person or group submitting archive data & string & optional  \\ \hline
 		provenance/notes\_s & any notes on the history of the data & string & optional \\ \hline
 		provenance/log\_s & log of any changes made to time series data & string & optional \\ \hline
 	\end{tabular}
@@ -305,9 +306,10 @@ Data logger is a the digital acquisition system used to collect time series data
 		calibration/filename\_s & calibration file or link for data logger & string & compulsory \\ \hline
 		calibration/date\_s & calibration date & string & compulsory \\ \hline
 		calibration/notes\_s & notes on calibration & string & optional \\ \hline
+		calibration/applied\_s & [ True $|$ False ] True if calibration has already been applied & string & optional \\ \hline
 		power\_source/type\_s & power source type [ Pb-acid battery $|$ solar panel $|$ Li battery $|$ ...] & string & compulsory \\ \hline
-		power\_source/start\_voltage\_d & starting voltage of power source & float & compulsory \\ \hline
-		power\_source/end\_voltage\_d & ending voltage of power source & float & compulsory \\ \hline
+		power\_source/start\_voltage\_d & starting voltage of power source & float & optional \\ \hline
+		power\_source/end\_voltage\_d & ending voltage of power source & float & optional \\ \hline
 		power\_source/notes\_s & notes on power source & string & optional \\ \hline
 	\end{tabular}
 	\label{tab:datalogger}
@@ -334,7 +336,8 @@ Data logger is a the digital acquisition system used to collect time series data
  "calibration/filename_s": "/bb2000.cal",
  "calibration/date_s": "2020-01-01",
  "calibration/notes_s": "frequency response of the data logger",
- "power_source/type_s": "solar panel and battery]",
+ "calibration/applied_s": "False",
+ "power_source/type_s": "solar panel and battery",
  "power_source/start_voltage_d": 13.1,
  "power_source/end_voltage_d": 12.0,
  "power_source/notes_s": "Overcast all day reduced recharging"
@@ -371,15 +374,15 @@ Electric channel refers to a dipole measurement of the electric field for a sing
 		negative/sensor\_type\_s & type of electric sensor [ Ag-AgCl $|$ Pb-PbCl $|$ ...] & string & compulsory \\ \hline
 		negative/sensor\_manufacturer\_s & electric sensor manufacturer & string & compulsory \\ \hline
 		negative/sensor\_notes\_s & notes on electric sensor & string & optional \\ \hline
-		contact\_resistance/start\_A\_d & contact resistance at beginning of measurement, positive polarity & float & compulsory \\ \hline
-		contact\_resistance/start\_B\_d & contact resistance at beginning of measurement, negative polarity & float & compulsory \\ \hline
-		contact\_resistance/end\_A\_d & contact resistance at end of measurement, positive polarity & float & compulsory \\ \hline
-		contact\_resistance/end\_B\_d & contact resistance at end of measurement, negative polarity & float & compulsory \\ \hline
-		contact\_resistance/units\_s & contact resistance units & string & compulsory \\ \hline
-		ac/start\_d & AC at start of measurement [ V ] & float & compulsory \\ \hline
-		ac/end\_d & AC at end of measurement [ V ] & float & compulsory \\ \hline
-		dc/start\_d & DC at start of measurement [ V ] & float & compulsory \\ \hline
-		dc/end\_d & DC at end of measurement [ V ] & float & compulsory \\ \hline
+		contact\_resistance/start\_A\_d & contact resistance at beginning of measurement, positive polarity & float & optional \\ \hline
+		contact\_resistance/start\_B\_d & contact resistance at beginning of measurement, negative polarity & float & optional \\ \hline
+		contact\_resistance/end\_A\_d & contact resistance at end of measurement, positive polarity & float & optional \\ \hline
+		contact\_resistance/end\_B\_d & contact resistance at end of measurement, negative polarity & float & optional \\ \hline
+		contact\_resistance/units\_s & contact resistance units & string & optional \\ \hline
+		ac/start\_d & AC at start of measurement [ V ] & float & optional \\ \hline
+		ac/end\_d & AC at end of measurement [ V ] & float & optional \\ \hline
+		dc/start\_d & DC at start of measurement [ V ] & float & optional \\ \hline
+		dc/end\_d & DC at end of measurement [ V ] & float & optional \\ \hline
 		
 	\end{tabular}
 	\label{tab:electric01}
@@ -392,17 +395,19 @@ Electric channel refers to a dipole measurement of the electric field for a sing
 		\hline
 		\textbf{Metadata Key} & \textbf{Description} & \textbf{Type} & \textbf{Required} \\ \hline
 		gain\_d & gain on electric channel & float & optional \\ \hline
+		gain\_applied\_s & [ True $|$ False ] True if gain has already been applied & string & optional \\ \hline
 		calibration\_s & how sensor was calibrated  & string & optional \\ \hline
-		units\_s & units of electric field data [ counts $|$ mV $|$ ... ] & string &  \\ \hline
+		units\_s & units of electric field data [ counts $|$ mV $|$ ... ] & string &  optional \\ \hline
 		sample\_rate\_d & sample rate of electric channel (samples/second) & float & compulsory \\ \hline
-		notes\_s & notes about electric field measurement & string &  \\ \hline
-		data\_quality/rating\_d & data quality rating based on some sort of statistic & float &  \\ \hline
-		data\_quality/warning\_comments\_s & any warnings about data quality & string &  \\ \hline
-		data\_quality/warning\_flags\_s & a value flagging bad data  & float &  \\ \hline
-		data\_quality/author\_s & person who did QC/QA on data & string &  \\ \hline
-		filter/type\_s & any type of filter used durring recording & string &  \\ \hline
-		filter/parameters\_s & filter parameters & string &  \\ \hline
-		filter/notes\_s & any notes on the filtering & string &  \\ \hline
+		notes\_s & notes about electric field measurement & string &  optional\\ \hline
+		data\_quality/rating\_i & data quality rating based on some sort of statistic & int &  optional\\ \hline
+		data\_quality/warning\_comments\_s & any warnings about data quality & string & optional \\ \hline
+		data\_quality/warning\_flags\_i & [ 0 $|$ 1 ] 0 if no warning flags & int & compulsory\\ \hline
+		data\_quality/author\_s & person who did QC/QA on data & string & optional \\ \hline
+		calibration/type\_s & any type of calibration used during recording & string & optional \\ \hline
+		calibration/parameters\_s & filter parameters & string & optional \\ \hline
+		calibration/notes\_s & any notes on the filtering & string & optional \\ \hline
+		calibration/applied\_s & [ True $|$ False ] True if filter has already been applied & string & optional \\ \hline
 		\end{tabular}
 		\label{tab:electric02}
 \end{table}	
@@ -442,17 +447,19 @@ Electric channel refers to a dipole measurement of the electric field for a sing
  "dc/start_d": 0.001,
  "dc/end_d": 0.002,
  "gain_d": 1,
+ "gain_applied_s": "True",
  "calibration_s": "no calibrations",
- "units_s": "counts",
+ "units_s": "mV",
  "sample_rate_d": 256,
  "notes_s": "cables chewed on 2020-01-07",
  "data_quality/rating_d": 3,
  "data_quality/warning_comments_s": "cables chewed 2020-01-07",
- "data_quality/warning_flags_s": "Nan",
+ "data_quality/warning_flags_s": 0,
  "data_quality/author_s": "Q. Sea",
- "filter/type_s": "any type of filter used durring recording",
- "filter/parameters_s": "filter parameters",
- "filter/notes_s": "any notes on the filtering"
+ "calibration/type_s": "any type of filter used during recording",
+ "calibration/parameters_s": "filter parameters",
+ "calibration/notes_s": "any notes on the filtering",
+ "calibration/applied_s": "True"
 }
 \end{verbatim}
 
@@ -466,37 +473,33 @@ A magnetic channel is a recording of one component of the magnetic field at a si
 	\begin{tabular}{|l|p{3in}|l|l|}
 		\hline
 		\textbf{Metadata Key} & \textbf{Description} & \textbf{Type} & \textbf{Required} \\ \hline
-		sensor/type\_s & type of magnetic sensor [ Induction Coil $|$ flux gate $|$ ...] & string & \\ \hline
-		sensor/manufacturer\_s & magnetic sensor manufacturer & string &  \\ \hline
-		sensor/notes\_s & notes on sensor & string &  \\ \hline
-		channel\_num\_i & channel number [ 1 $|$ 2 $|$ 3 $|$ 4 $|$ 5 $|$ 6 $|$...] & int &  \\ \hline
-		component\_s & [ Hx $|$ Hy $|$ Hz ] & string  &  \\ \hline
-		azimuth/value\_s & azimuth N = 0 ,  E = 90 & float &  \\ \hline
-		azimuth/units\_s & units on azimuth [ degrees $|$ radians $|$ ...] & string &  \\ \hline
-		ID\_s & sensor id number & string &  \\ \hline
-		longitude\_d & sensor longitude degrees & float &  \\ \hline
-		latitude\_d & sensor latitude in degrees & float &  \\ \hline
-		elevation\_d & sensor elevation in meters & float &  \\ \hline
-		datum\_s & datum for location [ relative $|$ WGS84 $|$ UTMZone $|$ ...] & string &  \\ \hline
-		gain\_s & gain on magnetic channel & float &  \\ \hline
-		units\_s & units of magnetic field data [ counts $|$ mV $|$ ... ] & string &  \\ \hline
-		sample\_rate\_d & sample rate of magnetic channel (samples/second) & float &  \\ \hline
-		h\_field/min\_start\_d & minimum h-field value at beginning of measurement & float &  \\ \hline
-		h\_field/max\_start\_d & maximum h-field value at beginning of measurement & float &  \\ \hline
-		h\_field/min\_end\_d & minimum h-field value at end of measurement & float &  \\ \hline
-		h\_field/max\_end\_d & maximum h-field value at end of measurement & float &  \\ \hline
-		h\_field/units\_s & units of h-field measurement [ nT $|$ ...] & string &  \\ \hline
-		calibration/file\_name\_s & name or link to calibration data & string &  \\ \hline
-		calibration/date\_s & data of last calibration & string &  \\ \hline
-		calibration/notes\_s & any notes on calibration & string &  \\ \hline
-		notes\_s & notes on magnetic field measurments & string &  \\ \hline
-		data\_quality/rating\_d & data quality rating based on some sort of statistic & float &  \\ \hline
-		data\_quality/warning\_comments\_s & any warnings about data quality & string &  \\ \hline
-		data\_quality/warning\_flags\_s & a value flagging bad data  & float &  \\ \hline
-		data\_quality/author\_s & person who did QC/QA on data & string &  \\ \hline
-		filter/type\_s & any type of filter used during recording & string &  \\ \hline
-		filter/parameters\_s & filter parameters & string &  \\ \hline
-		filter/notes\_s & any notes on the filtering & string &  \\ \hline
+		sensor/type\_s & type of magnetic sensor [ Induction Coil $|$ flux gate $|$ ...] & string & compulsory\\ \hline
+		sensor/manufacturer\_s & magnetic sensor manufacturer & string & optional \\ \hline
+		sensor/notes\_s & notes on sensor & string &  optional\\ \hline
+		channel\_num\_i & channel number [ 1 $|$ 2 $|$ 3 $|$ 4 $|$ 5 $|$ 6 $|$...] & int & compulsory \\ \hline
+		component\_s & [ Hx $|$ Hy $|$ Hz ] & string  &  compulsory \\ \hline
+		azimuth/value\_s & azimuth N = 0 ,  E = 90 & float &  compulsory\\ \hline
+		azimuth/units\_s & units on azimuth [ degrees ] & string &  compulsory\\ \hline
+		ID\_s & sensor id number & string &  optional \\ \hline
+		longitude\_d & sensor longitude degrees & float & compulsory \\ \hline
+		latitude\_d & sensor latitude in degrees & float & compulsory \\ \hline
+		elevation\_d & sensor elevation in meters & float &  compulsory\\ \hline
+		datum\_s & datum for location [ relative $|$ WGS84 $|$ UTMZone $|$ ...] & string &  compulsory\\ \hline
+		units\_s & units of h-field measurement [ counts $|$ mV $|$ nT...] & string &  compulsory \\ \hline
+		sample\_rate\_d & sample rate of magnetic channel (samples/second) & float &  compulsory \\ \hline
+		h\_field/min\_start\_d & minimum h-field value at beginning of measurement & float & optional \\ \hline
+		h\_field/max\_start\_d & maximum h-field value at beginning of measurement & float &  optional \\ \hline
+		h\_field/min\_end\_d & minimum h-field value at end of measurement & float &  optional \\ \hline
+		h\_field/max\_end\_d & maximum h-field value at end of measurement & float &  optional \\ \hline
+		calibration/file\_name\_s & name or link to calibration data & string &  optional \\ \hline
+		calibration/date\_s & data of last calibration & string &  optional \\ \hline
+		calibration/notes\_s & any notes on calibration & string &  optional \\ \hline
+		calibration/applied\_s & [ True $|$ False ] True if calibration has already been applied & string & optional \\ \hline
+		notes\_s & notes on magnetic field measurments & string & optional \\ \hline
+		data\_quality/rating\_i & data quality rating based on some sort of statistic & float &  optional\\ \hline
+		data\_quality/warning\_comments\_s & any warnings about data quality & string & optional \\ \hline
+		data\_quality/warning\_flags\_i & [ 0 $|$ 1 ] 0 if no warning flags  & float &  compulsory \\ \hline
+		data\_quality/author\_s & person who did QC/QA on data & string & optional \\ \hline
 		\end{tabular}
 	\label{tab:magnetic}
 \end{table}
@@ -525,18 +528,15 @@ A magnetic channel is a recording of one component of the magnetic field at a si
  "h_field/max_start_d": 10,
  "h_field/min_end_d": -9,
  "h_field/max_end_d": 9,
- "h_field/units_s": "nT",
  "calibration/file_name_s": "/bb2149.cal",
  "calibration/date_s": "2020-10-01",
  "calibration/notes_s": "Complete sweep of frequencies",
+ "calibration/applied_s": "False",
  "notes_s": "not buried all the way ",
  "data_quality/rating_d": 4,
  "data_quality/warning_comments_s": "windy during the day",
- "data_quality/warning_flags_s": "Nan",
+ "data_quality/warning_flags_s": 0,
  "data_quality/author_s": "Q. Sea",
- "filter/type_s": "any type of filter used during recording",
- "filter/parameters_s": "filter parameters",
- "filter/notes_s": "any notes on the filtering"
 }
 \end{verbatim}
 
