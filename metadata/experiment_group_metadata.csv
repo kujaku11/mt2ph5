@@ -1,0 +1,31 @@
+experiment_id_s,experiment ID
+net_code_s,Net Code given by IRIS
+nickname_s,nickname of survey
+longname_s,long name of survey
+PIs_s,principle investigators
+institutions_s,institutions involved
+north_west_corner/X/value_d,x coordinate of northwest corner
+north_west_corner/X/units_s,units of x location [ degrees | meters | ...]
+north_west_corner/Y/value_d,y coordinate of northwest corner
+north_west_corner/Y/units_s,units of x location [ degrees | meters | ...]
+north_west_corner/Z/value_d,z value of northwest corner
+north_west_corner/Z/units_s,units of z location [ meters | ...]
+north_west_corner/coordinate_system_s,coordinate system of NW corner
+north_west_corner/projection_s,map projection of NW corner
+north_west_corner/ellipsoid_s,reference ellipsoid of NW corner
+north_west_corner/description_s,description of NW corner
+south_east_corner/X/value_d,x coordinate of southeast corner
+south_east_corner/X/units_s,units of x location [ degrees | meters | ...]
+south_east_corner/Y/value_d,y coordinate of southeast corner
+south_east_corner/Y/units_s,units of x location [ degrees | meters | ...]
+south_east_corner/Z/value_d,z value of southeast corner
+south_east_corner/Z/units_s,units of z location [ meters | ...]
+south_east_corner/coordinate_system_s,coordinate system of SE corner
+south_east_corner/projection_s,map projection of SE corner
+south_east_corner/ellipsoid_s,reference ellipsoid of SE corner
+south_east_corner/description_s,description of SE corner
+summary_paragraph_s,summary paragraph of survey
+time_stamp/ascii_s,time stamp of file in iso format
+time_stamp/epoch_l,epoch seconds of time stamp
+time_stamp/micro_seconds_i,number of microseconds in time stamp
+time_stamp/type_s,type of time stamp [ ASCII | String | Both

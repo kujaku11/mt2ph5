@@ -1,0 +1,38 @@
+id_s,station name
+location/X/value_d,x location of station
+location/X/units_s,x location units [ degrees | meters | ...]
+location/Y/value_d,y location of station
+location/Y/units_s,x location units [ degrees | meters | ...]
+location/Z/value_d,z location of station
+location/Z/units_s,z location units [ degrees | meters | ...]
+location/coordinate_system_s,station location coordinate system
+location/projection_s,station location projection
+location/ellipsoid_s,station location reference ellipsoid
+location/description_s,station location description
+deploy_time/ascii_s,start time in iso format
+deploy_time/epoch_l,start time in epoch seconds
+deploy_time/micro_seconds_i,microseconds in epoch seconds
+deploy_time/type_s,type of start time [ ASCII | Epoch | Both ]
+pickup_time/ascii_s,end time in iso format
+pickup_time/epoch_l,end time in epoch seconds
+pickup_time/micro_seconds_i,microseconds in epoch seconds
+pickup_time/type_s,type of end time [ ASCII | Epoch | Both ]
+das/serial_number_s,data logger serial number
+das/model_s,data logger model
+das/manufacturer_s,data logger manufacturer
+das/notes_s,data logger notes
+sensor/serial_number_s,sensor serial number
+sensor/model_s,sensor model type
+sensor/manufacturer_s,sensor manufacturer
+sensor/notes_s,sensor notes
+description_s,description of station
+seed_band_code_s,something used by IRIS
+sample_rate_i,sampling rate in samples/second
+sample_rate_multiplier_i,sample rate multiplier
+seed_instrument_code_s,seed instrument code
+seed_orientation_code_s,seed orientation code
+seed_location_code_s,seed location code
+seed_station_name_s,seed station name
+channel_number_i,channel number
+receiver_table_n_i,receiver orientation table entry in PH5
+response_table_n_i,response table entry in PH5

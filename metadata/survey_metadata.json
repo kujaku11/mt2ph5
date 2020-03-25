@@ -28,5 +28,5 @@
  "time_stamp/ascii_s": "time stamp of file in iso format", 
  "time_stamp/epoch_l": "epoch seconds of time stamp", 
  "time_stamp/micro_seconds_i": "number of microseconds in time stamp", 
- "time_stamp/type_s": "type of time stamp [ ASCII | String | Both",
+ "time_stamp/type_s": "type of time stamp [ ASCII | String | Both"
 }
