@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>MT666</Source>
+  <Module>ObsPy 1.2.1</Module>
+  <ModuleURI>https://www.obspy.org</ModuleURI>
+  <Created>2020-05-13T01:38:37.794171Z</Created>
+  <Network code="MT666">
+    <Station code="MT666">
+      <Latitude unit="DEGREES">40.0</Latitude>
+      <Longitude unit="DEGREES">-115.0</Longitude>
+      <Elevation unit="METERS">1000.0</Elevation>
+      <Site>
+        <Name></Name>
+      </Site>
+      <Channel code="SQE" startDate="2020-01-01T12:20:05.000000Z" endDate="2020-01-05T62:40:15.000000Z" locationCode="">
+        <Comment>
+          <Value>DipoleLength = 10 meters</Value>
+        </Comment>
+        <ns0:DipoleLength xmlns:ns0="MT" units="meters">10</ns0:DipoleLength>
+        <ns1:FieldNotes xmlns:ns1="MT">
+          <ns1:ContactResistanceA units="kOhms">1.2</ns1:ContactResistanceA>
+          <ns1:ContactResistanceB units="kOhms">1.8</ns1:ContactResistanceB>
+        </ns1:FieldNotes>
+        <Latitude unit="DEGREES">39.0</Latitude>
+        <Longitude unit="DEGREES">-112.0</Longitude>
+        <Elevation unit="METERS">150.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">90.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <Type>ELECTRIC POTENTIAL</Type>
+        <SampleRate>256.0</SampleRate>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>
